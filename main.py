@@ -47,15 +47,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Runs OpenLockstep')
     parser.add_argument('--server', action='store_true')
     parser.add_argument('--client', action='store_true')
+    parser.add_argument('--port', type=int, default=8000)
+    parser.add_argument('--host', type=str, default='localhost')
+
     args = parser.parse_args()
-    port = 8000
-    host = 'localhost'
     if args.client:
-        client = Client(host, port)
+        client = Client(args.host, args.port)
         while True:
             text = input("> ")[:255]
             client.send(bytes([len(text)]))
             client.send(text.encode('utf-8'))
     elif args.server:
-        Server(port, host=host).run()
+        Server(args.port, host=args.host).run()
         
