@@ -31,6 +31,8 @@ class ServerThread(threading.Thread):
         last_data = None
         while last_data != b'':
             last_data = self.socket.recv(1)
+            length = ord(last_data) 
+            last_data = self.socket.recv(length)
             print(last_data)
 
 class Client():
@@ -51,7 +53,8 @@ if __name__ == "__main__":
     if args.client:
         client = Client(host, port)
         while True:
-            text = input("> ")
+            text = input("> ")[:255]
+            client.send(bytes([len(text)]))
             client.send(text.encode('utf-8'))
     elif args.server:
         Server(port, host=host).run()
