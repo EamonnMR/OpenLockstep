@@ -8,6 +8,10 @@ class Command:
     you can override serialize and deserialize in your classes and send the
     data in whatever custom binary format you desire. In that case, you can
     ignore net_members.
+    
+    If you're going to use the default deserialize command, you need to
+    ensure that your constructor works when called with no arguments - just
+    make all of the arguments optional.
     '''
 
     net_members = []

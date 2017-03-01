@@ -3,7 +3,9 @@
 import argparse
 import pygame
 import json
+
 import net
+import commands
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Runs OpenLockstep')
@@ -27,17 +29,25 @@ if __name__ == "__main__":
         mousedown = False
 
         while True:
+            # Event portion of the loop
+            command = None
             for event in pygame.event.get():
                 if event.type == pygame.MOUSEBUTTONUP and mousedown:
-                    print('click')
+                    command = commands.Ping(event.pos)
                     mousedown = False
                 elif event.type == pygame.MOUSEBUTTONDOWN and not mousedown:
                     mousedown = True
-
-        #while True:
-        #    text = input("> ")[:255]
-        #    client.send(bytes([len(text)]))
-        #    client.send(text.encode('utf-8'))
+            if command:
+                client.send(command.serialize())
+            # Network recieving portion of the loop
+            in_command = client.recieve()
+            if in_command is not None:
+                print(in_command)
+                ping = commands.Ping.deserialize(in_command)
+                pygame.draw.circle(screen, (200, 200, 200),
+                                   ping.position, 10, 2)
+            # Make sure this stays at the end of the game loop
+            pygame.display.flip()
     elif args.server:
         net.Server(args.port, host=args.host, client_count=args.clients).run()
 
