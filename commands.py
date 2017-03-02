@@ -1,5 +1,11 @@
 import json
 
+
+
+def deserialize(data):
+    return Ping.deserialize(data)
+
+
 class Command:
     ''' Command: An instruction for units to be sent over the network
 
@@ -14,7 +20,11 @@ class Command:
     make all of the arguments optional.
     '''
 
-    net_members = []
+    net_members = ['step']
+
+    def __init__(self, step=None):
+        self.step = step
+
     def serialize(self):
         cls = type(self)
         return json.dumps(
@@ -32,8 +42,9 @@ class Command:
 
 
 class Ping(Command):
-    net_members = ['position']
+    net_members = ['position', 'step']
     
-    def __init__(self, position=[0,0]):
-        self.position = position 
+    def __init__(self, step=None, position=[0,0]):
+        self.position = position
+        self.step = step
 

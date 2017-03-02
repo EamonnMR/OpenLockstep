@@ -4,6 +4,8 @@ import argparse
 import threading
 import queue # Use Async io Queue?
 
+import commands
+
 def send_with_length(socket, msg):
     socket.send(bytes([len(msg)]))
     socket.send(msg)
@@ -19,6 +21,7 @@ class Server():
         self.socket.bind((socket.gethostname() if not host else host, port))
         self.client_count = client_count
         self.client_cons = {}
+        self.frames = {}
 
     def run(self):
         self.socket.listen(self.listen)
@@ -33,25 +36,37 @@ class Server():
             client_con.start()
             print('Connected: ' + str(address) + ' id: ' + str(con_id))
 
-    def send(self, message):
+    def add_msg(self, message, con_id):
         print('send')
-        for id, client_con in self.client_cons.items():
-            client_con.message_que.put(message)
+        print(message, con_id) 
+        self.frames.setdefault(message.step, {})[con_id] = message
+
+        if self.frames[message.step].keys() == self.client_cons.keys():
+            print('frame finished')
+            print(self.frames[message.step])
+            for id, client_con in self.client_cons.items():
+                for send_message in self.frames[message.step].values():
+                    if send_message is not None:
+                        print('Sending ', send_message)
+                        client_con.message_que.put(send_message)
 
 
 class ServerThread(threading.Thread):
-    def __init__(self, parent, client_socket, uid):
+    def __init__(self, parent, client_socket, con_id):
         threading.Thread.__init__(self)
         self.socket = client_socket
         self.parent = parent
         self.message_que = queue.Queue()
+        self.con_id = con_id
 
     def queue_consumer(self):
         print('started queue consumer')
         while True:
             if not self.message_que.empty():
                 print('Sending message')
-                send_with_length(self.socket, self.message_que.get())
+                msg =  self.message_que.get().serialize()
+                print(msg)
+                send_with_length(self.socket, msg)
 
 
     def run(self):
@@ -62,13 +77,15 @@ class ServerThread(threading.Thread):
         # Run loop to recieve data
         last_data = None
         while True:
+
             print('in server loop')
             msg_len_byte = self.socket.recv(1)
             if msg_len_byte:
                 length = ord(msg_len_byte) 
                 last_data = self.socket.recv(length)
                 print(last_data)
-                self.parent.send(last_data)
+                self.parent.add_msg(commands.deserialize(last_data),
+                        self.con_id)
                 if len(last_data) != length:
                     print("Bad MSG length - Connection closed")
                     break
