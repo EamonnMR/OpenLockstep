@@ -6,15 +6,67 @@ import queue # Use Async io Queue?
 
 import commands
 
-def send_with_length(socket, msg):
-    socket.send(bytes([len(msg)]))
-    socket.send(msg)
 
 def get_socket():
     return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
-class Server():
+class Step:
+    def __init__(self, uid, command_list):
+        self.uid = uid
+        self.commands = command_list
+
+
+class Messenger:
+    ''' This sends and recieves ints and byte arrays as discrete groups.
+    The purpose of this is to ensure that all of the bytes are transmitted -
+    for example, we need to make sure that when we send an encoded message
+    we send the length and the other end can expect.
+    
+    This wrapper should also help if you need to rewrite everything as UDP - 
+    this is where you'd implement the reliability.
+
+    TODO: Make send and recieve ints use more bits, it'll make life easier.
+    '''
+
+    class Disconnect(Exception):
+        ''' Indicates that the connection is closed '''
+        pass
+
+    def __init__(self, open_socket):
+        print(self)
+        print(open_socket)
+        self.socket = open_socket
+
+    def send_bytes(self, msg):
+        self.send_int(len(msg))
+        self.socket.send(msg)
+
+    def send_int(self, integer):
+        self.socket.send(bytes([integer]))
+
+    def get_int(self):
+        print(self.socket)
+        byte = self.socket.recv(1)
+        if byte:
+            return ord(byte)
+        else:
+            raise Messenger.Disconnect()
+
+
+    def get_bytes(self):
+        length = self.get_int()
+        if length:
+             msg = self.socket.recv(length)
+             if len(msg) != length:
+                 raise Messenger.Disconnect()
+             else:
+                 return msg
+        else:
+            return b''
+
+
+class Server:
     def __init__(self, port, listen=5, host=None, client_count=1):
         self.socket = get_socket()
         self.listen = listen
@@ -46,7 +98,9 @@ class Server():
             print(self.frames[message.step])
             for id, client_con in self.client_cons.items():
                 for send_message in self.frames[message.step].values():
+                    sent_nothing = True
                     if send_message is not None:
+                        sent_nothing = False
                         print('Sending ', send_message)
                         client_con.message_que.put(send_message)
 
@@ -54,7 +108,7 @@ class Server():
 class ServerThread(threading.Thread):
     def __init__(self, parent, client_socket, con_id):
         threading.Thread.__init__(self)
-        self.socket = client_socket
+        self.messenger = Messenger(client_socket)
         self.parent = parent
         self.message_que = queue.Queue()
         self.con_id = con_id
@@ -66,7 +120,7 @@ class ServerThread(threading.Thread):
                 print('Sending message')
                 msg =  self.message_que.get().serialize()
                 print(msg)
-                send_with_length(self.socket, msg)
+                self.messenger.send_bytes(msg)
 
 
     def run(self):
@@ -77,34 +131,24 @@ class ServerThread(threading.Thread):
         # Run loop to recieve data
         last_data = None
         while True:
-
             print('in server loop')
-            msg_len_byte = self.socket.recv(1)
-            if msg_len_byte:
-                length = ord(msg_len_byte) 
-                last_data = self.socket.recv(length)
-                print(last_data)
-                self.parent.add_msg(commands.deserialize(last_data),
-                        self.con_id)
-                if len(last_data) != length:
-                    print("Bad MSG length - Connection closed")
-                    break
-            else:
-                print("Connection closed")
-                break
+            self.parent.add_msg(
+                    commands.deserialize(self.messenger.get_bytes()),
+                    self.con_id)
 
 
 class Client():
     def __init__(self, host, port):
-        self.socket = get_socket()
-        self.socket.connect((host, port))
-        self.thread = Client.ClientThread(self.socket)
+        socket = get_socket()
+        socket.connect((host, port))
+        self.messenger = Messenger(socket)
+        self.thread = Client.ClientThread(self.messenger)
         self.thread.start()
 
-    def send(self, bytestr):
+    def send(self, msg):
         print('client.send')
-        send_with_length(self.socket, bytestr)
-
+        self.messenger.send_bytes(msg)
+    
     def recieve(self):
         if self.thread.queue.empty():
             return None
@@ -112,20 +156,19 @@ class Client():
             return self.thread.queue.get()
 
     class ClientThread(threading.Thread):
-        def __init__(self, socket):
+        def __init__(self, messenger):
             threading.Thread.__init__(self)
             self.queue = queue.Queue()
-            self.socket = socket
+            self.messenger = messenger
 
         def run(self):
             print('running client thread')
             while True:    
                 print('cli pre rcv')
-                msg_len_byte = self.socket.recv(1)
+                msg = self.messenger.get_bytes()
                 print('cli post rcv')
-                if msg_len_byte:
+                if msg:
                     print('got message with length')
-                    length = ord(msg_len_byte)
-                    self.queue.put(self.socket.recv(length))
+                    self.queue.put(msg)
 
 

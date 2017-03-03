@@ -3,7 +3,10 @@ import json
 
 
 def deserialize(data):
-    return Ping.deserialize(data)
+    if data:
+        return Ping.deserialize(data)
+    else:
+        return None
 
 
 class Command:

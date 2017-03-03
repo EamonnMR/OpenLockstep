@@ -30,9 +30,9 @@ if __name__ == "__main__":
         pygame.display.set_caption("OpenLockstep RTS")
         client = net.Client(args.host, args.port)
         mousedown = False
+        step = 0
 
         while True:
-            step = 0
             # Event portion of the loop
             command = None
             for event in pygame.event.get():
@@ -53,6 +53,7 @@ if __name__ == "__main__":
                                    ping.position, 10, 2)
             # Make sure this stays at the end of the game loop
             pygame.display.flip()
+            step += 1 # TODO: Add timer
     elif args.server:
         net.Server(args.port, host=args.host, client_count=args.clients).run()
 
