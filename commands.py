@@ -4,6 +4,7 @@ import json
 
 def deserialize(data):
     if data:
+        print(data)
         return Ping.deserialize(data)
     else:
         return None
@@ -23,10 +24,7 @@ class Command:
     make all of the arguments optional.
     '''
 
-    net_members = ['step']
-
-    def __init__(self, step=None):
-        self.step = step
+    net_members = []
 
     def serialize(self):
         cls = type(self)
@@ -45,9 +43,8 @@ class Command:
 
 
 class Ping(Command):
-    net_members = ['position', 'step']
+    net_members = ['position']
     
-    def __init__(self, step=None, position=[0,0]):
+    def __init__(self, position=[0,0]):
         self.position = position
-        self.step = step
 

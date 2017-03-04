@@ -37,16 +37,14 @@ if __name__ == "__main__":
             command_list = []
             for event in pygame.event.get():
                 if event.type == pygame.MOUSEBUTTONUP and mousedown:
-                    command_list = [commands.Ping(position=event.pos,
-                                            step=step + step_ahead)]
+                    command_list = [commands.Ping(position=event.pos)]
                     mousedown = False
                 elif event.type == pygame.MOUSEBUTTONDOWN and not mousedown:
                     mousedown = True
-            client.send(net.Step(step, command_list))
+            client.send(net.Step(step + step_ahead, command_list))
             # Network recieving portion of the loop
             in_step = client.recieve()
             if in_step is not None:
-                print(in_step.commands)
                 for ping in in_step.commands:
                     pygame.draw.circle(screen, (200, 200, 200),
                                    ping.position, 10, 2)

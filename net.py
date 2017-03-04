@@ -44,7 +44,7 @@ class Messenger:
 
     def get_step(self):
         # This mirrors the sending code closely, p
-        return Step(self.get_bytes().decode('utf-8'), [
+        return Step(int(self.get_bytes().decode('utf-8')), [
             commands.deserialize(self.get_bytes())
             for counter in range(self.get_int())])
 
@@ -66,7 +66,6 @@ class Messenger:
         self.socket.send(bytes([integer]))
 
     def get_int(self):
-        print(self.socket)
         byte = self.socket.recv(1)
         if byte:
             return ord(byte)
