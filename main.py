@@ -34,25 +34,25 @@ if __name__ == "__main__":
 
         while True:
             # Event portion of the loop
-            command = None
+            command_list = []
             for event in pygame.event.get():
                 if event.type == pygame.MOUSEBUTTONUP and mousedown:
-                    command = commands.Ping(position=event.pos,
-                                            step=step + step_ahead)
+                    command_list = [commands.Ping(position=event.pos,
+                                            step=step + step_ahead)]
                     mousedown = False
                 elif event.type == pygame.MOUSEBUTTONDOWN and not mousedown:
                     mousedown = True
-            if command:
-                client.send(command.serialize())
+            client.send(net.Step(step, command_list))
             # Network recieving portion of the loop
-            in_command = client.recieve()
-            if in_command is not None:
-                print(in_command)
-                ping = commands.deserialize(in_command)
-                pygame.draw.circle(screen, (200, 200, 200),
+            in_step = client.recieve()
+            if in_step is not None:
+                print(in_step.commands)
+                for ping in in_step.commands:
+                    pygame.draw.circle(screen, (200, 200, 200),
                                    ping.position, 10, 2)
             # Make sure this stays at the end of the game loop
             pygame.display.flip()
+
             step += 1 # TODO: Add timer
     elif args.server:
         net.Server(args.port, host=args.host, client_count=args.clients).run()

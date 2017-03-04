@@ -12,7 +12,9 @@ def get_socket():
 
 
 class Step:
-    def __init__(self, uid, command_list):
+    '''Just a list of commands and an ID.
+    '''
+    def __init__(self, uid, command_list=[]):
         self.uid = uid
         self.commands = command_list
 
@@ -28,6 +30,24 @@ class Messenger:
 
     TODO: Make send and recieve ints use more bits, it'll make life easier.
     '''
+    def send_step(self, step):
+        # First message: Unique ID of the frame (as a string because
+        # it will be a very large number. Might need to use bignum.
+        self.send_bytes(str(step.uid).encode('utf-8'))
+
+        # Second message (int): number of commands
+        self.send_int(len(step.commands))
+
+        # Remaining messages: send serialized commands
+        for command in step.commands:
+            self.send_bytes(command.serialize())
+
+    def get_step(self):
+        # This mirrors the sending code closely, p
+        return Step(self.get_bytes().decode('utf-8'), [
+            commands.deserialize(self.get_bytes())
+            for counter in range(self.get_int())])
+
 
     class Disconnect(Exception):
         ''' Indicates that the connection is closed '''
@@ -42,7 +62,7 @@ class Messenger:
         self.send_int(len(msg))
         self.socket.send(msg)
 
-    def send_int(self, integer):
+    def send_int(self, integer): # TODO: Make this a bigger int (uglier code)
         self.socket.send(bytes([integer]))
 
     def get_int(self):
@@ -73,7 +93,7 @@ class Server:
         self.socket.bind((socket.gethostname() if not host else host, port))
         self.client_count = client_count
         self.client_cons = {}
-        self.frames = {}
+        self.steps = {}
 
     def run(self):
         self.socket.listen(self.listen)
@@ -88,21 +108,32 @@ class Server:
             client_con.start()
             print('Connected: ' + str(address) + ' id: ' + str(con_id))
 
-    def add_msg(self, message, con_id):
-        print('send')
-        print(message, con_id) 
-        self.frames.setdefault(message.step, {})[con_id] = message
+    def add_msg(self, step, con_id):
+        # Tuple here tracks the actual step (which we build in this call)
+        # and a hash that decides if every client has checked in to the server
 
-        if self.frames[message.step].keys() == self.client_cons.keys():
-            print('frame finished')
-            print(self.frames[message.step])
+        server_step, check_in = self.steps.setdefault(step.uid, 
+                (Step(step.uid), 
+                    {k: False for k, v in self.client_cons.items()}
+                )
+        )
+
+        server_step.commands += step.commands
+
+        check_in[con_id] = True
+
+        # Kicked off here because it can only change after the above line
+        if all(check_in.values()):
+            print('frame finished: ' + str(step.uid))
             for id, client_con in self.client_cons.items():
-                for send_message in self.frames[message.step].values():
-                    sent_nothing = True
-                    if send_message is not None:
-                        sent_nothing = False
-                        print('Sending ', send_message)
-                        client_con.message_que.put(send_message)
+                client_con.message_que.put(server_step)
+
+        # Delete the step on the server because otherwise it'll blow up
+        # the memory.
+
+        del self.steps[step.uid]
+
+        # TODO: Put it on a queue to write to disc, broadcast to obs, etc.
 
 
 class ServerThread(threading.Thread):
@@ -117,10 +148,7 @@ class ServerThread(threading.Thread):
         print('started queue consumer')
         while True:
             if not self.message_que.empty():
-                print('Sending message')
-                msg =  self.message_que.get().serialize()
-                print(msg)
-                self.messenger.send_bytes(msg)
+                self.messenger.send_step(self.message_que.get())
 
 
     def run(self):
@@ -129,12 +157,8 @@ class ServerThread(threading.Thread):
         threading.Thread(target=self.queue_consumer).start()
 
         # Run loop to recieve data
-        last_data = None
         while True:
-            print('in server loop')
-            self.parent.add_msg(
-                    commands.deserialize(self.messenger.get_bytes()),
-                    self.con_id)
+            self.parent.add_msg(self.messenger.get_step(), self.con_id)
 
 
 class Client():
@@ -145,9 +169,8 @@ class Client():
         self.thread = Client.ClientThread(self.messenger)
         self.thread.start()
 
-    def send(self, msg):
-        print('client.send')
-        self.messenger.send_bytes(msg)
+    def send(self, step):
+        self.messenger.send_step(step)
     
     def recieve(self):
         if self.thread.queue.empty():
@@ -164,11 +187,6 @@ class Client():
         def run(self):
             print('running client thread')
             while True:    
-                print('cli pre rcv')
-                msg = self.messenger.get_bytes()
-                print('cli post rcv')
-                if msg:
-                    print('got message with length')
-                    self.queue.put(msg)
+                self.queue.put(self.messenger.get_step())
 
 
