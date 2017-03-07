@@ -54,9 +54,13 @@ class Messenger:
         pass
 
     def __init__(self, open_socket):
-        print(self)
-        print(open_socket)
         self.socket = open_socket
+        self.inbox = queue.Queue() # Will these work for async?
+        self.outbox = queue.Queue()
+        self.sender = Messenger.Sender(self)
+        self.reciever = Messenger.Reciever(self)
+        self.sender.start()
+        self.reciever.start()
 
     def send_bytes(self, msg):
         self.send_int(len(msg))
@@ -84,6 +88,32 @@ class Messenger:
         else:
             return b''
 
+    class SubThread(threading.Thread):
+        def __init__(self, parent):
+            threading.Thread.__init__(self)
+            self.parent = parent
+            
+    class Reciever(SubThread):
+        def run(self):
+            print('Run Reciever')
+            while True:
+                self.parent.inbox.put(self.parent.get_step())
+
+    class Sender(SubThread):
+        def run(self):
+            print('Run Sender')
+            while True:
+                if not self.parent.outbox.empty():
+                    self.parent.send_step(self.parent.outbox.get())
+    
+    def push_step(self, step):
+        self.outbox.put(step)
+
+    def pull_step(self):
+        if not self.inbox.empty():
+            return self.inbox.get()
+        else:
+            return None
 
 class Server:
     def __init__(self, port, listen=5, host=None, client_count=1):
@@ -99,65 +129,39 @@ class Server:
         
         # Create connection objects as connections appear
         while len(self.client_cons) < self.client_count:
-            (clientsock, address) = self.socket.accept()
+            clientsock, address = self.socket.accept()
             print(address)
             con_id = len(self.client_cons)
-            client_con = ServerThread(self, clientsock, con_id)
-            self.client_cons[con_id] = client_con
-            client_con.start()
+            self.client_cons[con_id] = Messenger(clientsock)
             print('Connected: ' + str(address) + ' id: ' + str(con_id))
-
-    def add_msg(self, step, con_id):
+        
         # Tuple here tracks the actual step (which we build in this call)
         # and a hash that decides if every client has checked in to the server
-
-        server_step, check_in = self.steps.setdefault(step.uid, 
-                (Step(step.uid), 
-                    {k: False for k, v in self.client_cons.items()}
-                )
-        )
-
-        server_step.commands += step.commands
-
-        check_in[con_id] = True
-
-        # Kicked off here because it can only change after the above line
-        if all(check_in.values()):
-            print('frame finished: ' + str(step.uid))
-            for id, client_con in self.client_cons.items():
-                client_con.message_que.put(server_step)
-
-        # Delete the step on the server because otherwise it'll blow up
-        # the memory.
-
-        del self.steps[step.uid]
-
-        # TODO: Put it on a queue to write to disc, broadcast to obs, etc.
-
-
-class ServerThread(threading.Thread):
-    def __init__(self, parent, client_socket, con_id):
-        threading.Thread.__init__(self)
-        self.messenger = Messenger(client_socket)
-        self.parent = parent
-        self.message_que = queue.Queue()
-        self.con_id = con_id
-
-    def queue_consumer(self):
-        print('started queue consumer')
         while True:
-            if not self.message_que.empty():
-                self.messenger.send_step(self.message_que.get())
+            for con_id, con in self.client_cons.items():
+                step = con.pull_step()
+                if step:
+                    server_step, check_in = self.steps.setdefault(step.uid, 
+                        (Step(step.uid), 
+                            {k: False for k, v in self.client_cons.items()}
+                        )
+                    )
 
+                    server_step.commands += step.commands
 
-    def run(self):
-        # start worker thread to send messages off the queue
+                    check_in[con_id] = True
 
-        threading.Thread(target=self.queue_consumer).start()
+                    # This could be the last one - check to see if we're done
+                    if all(check_in.values()):
+                        print('frame finished: ' + str(step.uid))
+                        for con_id, con in self.client_cons.items():
+                            con.push_step(server_step)
 
-        # Run loop to recieve data
-        while True:
-            self.parent.add_msg(self.messenger.get_step(), self.con_id)
+                        # Delete the step on the server to save memory
+                        
+                        del self.steps[step.uid]
+
+                        # TODO: Put it on a queue to write to disc, etc.
 
 
 class Client():
@@ -165,27 +169,10 @@ class Client():
         socket = get_socket()
         socket.connect((host, port))
         self.messenger = Messenger(socket)
-        self.thread = Client.ClientThread(self.messenger)
-        self.thread.start()
 
     def send(self, step):
-        self.messenger.send_step(step)
+        self.messenger.push_step(step)
     
     def recieve(self):
-        if self.thread.queue.empty():
-            return None
-        else:
-            return self.thread.queue.get()
-
-    class ClientThread(threading.Thread):
-        def __init__(self, messenger):
-            threading.Thread.__init__(self)
-            self.queue = queue.Queue()
-            self.messenger = messenger
-
-        def run(self):
-            print('running client thread')
-            while True:    
-                self.queue.put(self.messenger.get_step())
-
+        return self.messenger.pull_step()
 

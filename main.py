@@ -31,7 +31,7 @@ if __name__ == "__main__":
         client = net.Client(args.host, args.port)
         mousedown = False
         step = 0
-
+    
         while True:
             # Event portion of the loop
             command_list = []
@@ -45,6 +45,7 @@ if __name__ == "__main__":
             # Network recieving portion of the loop
             in_step = client.recieve()
             if in_step is not None:
+                print(in_step)
                 for ping in in_step.commands:
                     pygame.draw.circle(screen, (200, 200, 200),
                                    ping.position, 10, 2)
