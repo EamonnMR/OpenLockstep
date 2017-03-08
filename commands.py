@@ -4,7 +4,6 @@ import json
 
 def deserialize(data):
     if data:
-        print(data)
         return Ping.deserialize(data)
     else:
         return None

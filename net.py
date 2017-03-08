@@ -14,9 +14,16 @@ def get_socket():
 class Step:
     '''Just a list of commands and an ID.
     '''
-    def __init__(self, uid, command_list=[]):
+    def __init__(self, uid, command_list=None):
         self.uid = uid
-        self.commands = command_list
+        if command_list:  # This is most definitely not the same as
+            # command_list=[]
+            self.commands = command_list
+        else:
+            self.commands = []
+
+    def __str__(self):
+        return str(self.uid) + ": " + str(self.commands)
 
 
 class Messenger:
@@ -150,10 +157,10 @@ class Server:
                     server_step.commands += step.commands
 
                     check_in[con_id] = True
+                    
 
                     # This could be the last one - check to see if we're done
                     if all(check_in.values()):
-                        print('frame finished: ' + str(step.uid))
                         for con_id, con in self.client_cons.items():
                             con.push_step(server_step)
 
