@@ -6,6 +6,7 @@ import queue # Use Async io Queue?
 
 import commands
 
+STEP_AHEAD = 0
 
 def get_socket():
     return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -176,10 +177,21 @@ class Client():
         socket = get_socket()
         socket.connect((host, port))
         self.messenger = Messenger(socket)
+        #self.steps = {k, Step(k) for k in range(STEP_AHEAD)}
+        self.steps = {}
 
-    def send(self, step):
-        self.messenger.push_step(step)
-    
-    def recieve(self):
-        return self.messenger.pull_step()
-
+    def send(self, step_uid, commands):
+        self.messenger.push_step(
+                Step(step_uid + STEP_AHEAD, commands)
+        )
+        
+    def block_until_get_step(self, uid):
+        while True:
+            if uid in self.steps:
+                step = self.steps[uid]
+                del self.steps[uid]
+                return step
+            else:
+                step = self.messenger.pull_step()
+                if step:
+                    self.steps[step.uid] = step

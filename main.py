@@ -23,8 +23,6 @@ if __name__ == "__main__":
     settings = json.load(open(args.settings_file))
     settings.update(json.loads(args.settings))
 
-    step_ahead = 2 # This should get bigger for larger latentcy compensation
-
     if args.client:
         screen = pygame.display.set_mode(settings['screen_size'])
         pygame.display.set_caption("OpenLockstep RTS")
@@ -41,9 +39,9 @@ if __name__ == "__main__":
                     mousedown = False
                 elif event.type == pygame.MOUSEBUTTONDOWN and not mousedown:
                     mousedown = True
-            client.send(net.Step(step + step_ahead, command_list))
+            client.send(step, command_list)
             # Network recieving portion of the loop
-            in_step = client.recieve()
+            in_step = client.block_until_get_step(step)
             if in_step is not None:
                 for ping in in_step.commands:
                     pygame.draw.circle(screen, (200, 200, 200),
