@@ -6,7 +6,7 @@ import queue # Use Async io Queue?
 
 import commands
 
-STEP_AHEAD = 0
+STEP_AHEAD = 1
 
 def get_socket():
     return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -177,8 +177,9 @@ class Client():
         socket = get_socket()
         socket.connect((host, port))
         self.messenger = Messenger(socket)
-        #self.steps = {k, Step(k) for k in range(STEP_AHEAD)}
-        self.steps = {}
+        # Fill buffer with empty initial steps
+        # Becuase these will never be sent in by any client
+        self.steps = {k: Step(k) for k in range(STEP_AHEAD)}
 
     def send(self, step_uid, commands):
         self.messenger.push_step(
