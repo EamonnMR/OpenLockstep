@@ -29,27 +29,33 @@ if __name__ == "__main__":
         client = net.Client(args.host, args.port)
         mousedown = False
         step = 0
-    
+        
+        TIMER_EVENT = pygame.USEREVENT + 1
+        pygame.time.set_timer(TIMER_EVENT, 250) # 4 times / second (SC does 217)
+        command_list = [] 
         while True:
-            # Event portion of the loop
-            command_list = []
             for event in pygame.event.get():
                 if event.type == pygame.MOUSEBUTTONUP and mousedown:
-                    command_list = [commands.Ping(position=event.pos)]
+                    command_list += [commands.Ping(position=event.pos)]
                     mousedown = False
                 elif event.type == pygame.MOUSEBUTTONDOWN and not mousedown:
                     mousedown = True
-            client.send(step, command_list)
-            # Network recieving portion of the loop
-            in_step = client.block_until_get_step(step)
-            if in_step is not None:
-                for ping in in_step.commands:
-                    pygame.draw.circle(screen, (200, 200, 200),
-                                   ping.position, 10, 2)
-            # Make sure this stays at the end of the game loop
+                elif event.type == TIMER_EVENT:
+                    # Transmit accumulated commands then clear list
+                    client.send(step, command_list)
+                    command_list = [] # Set-to-new-empty, not delete
+
+                    # Wait for the server
+                    # See net for why this should not lag the game
+                    # TODO: Handle lag more gracefully (show "lag" screen?)
+                    in_step = client.block_until_get_step(step)
+                    # TODO: Game logic goes here
+                    for ping in in_step.commands:
+                        pygame.draw.circle(screen, (200, 200, 200),
+                                           ping.position, 10, 2)
+                    step += 1 # Only advance after we've recieved a new step
             pygame.display.flip()
 
-            step += 1 # TODO: Add timer
     elif args.server:
         net.Server(args.port, host=args.host, client_count=args.clients).run()
 
