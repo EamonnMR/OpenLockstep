@@ -1,9 +1,21 @@
+'''
+Entity/Component system. See:
+    Game Engine Architecture, Second Edition
+    By Jason Gregory
+    Page 885 
+
+For a discussion of entity/component.
+
+'''
+
+import hashlib
+
 class EntityManager:
     def __init__(self, ents=None, systems=None):
         self.ent_count = 0
         self.ents = ents
         if not self.ents:
-            self.ents = []
+            self.ents = {}
 
         self.systems = systems
         if not self.systems:
@@ -13,27 +25,36 @@ class EntityManager:
         for system in self.systems:
             system.step(self.ents)
 
+        #state_str = ''
+        #print(self.ents)
+        #for ent in self.ents.values():
+        #    state_str += str(ent)
+        
+        # Return an md5 of the state to ensure that all is well
+        return True # hashlib.md5(state_str.encode()).hexdigest()
+        
 
     def add_ent(self, ent):
         # TODO: Could this live in the entity constructor?
         id = self.ent_count
         ent.id = id
         self.ents[id] = ent
+        self.ent_count += 1
 
 
 class System:
     ''' Abstract base class for system
-    To use, override the "criteria" array of components to look for,
-    and override the do_step function to implement the system.'''
-
-    criteria = []
+    To use, override the "criteria" array of components to look for (in
+    your constructor) and override the do_step function to.'''
+    def __init__(self):
+        self.criteria = []
 
     def step(self, unfiltered_list):
         ''' This is called with a list of every ent, regardless of
         what components they contain. If the system needs this (or
         always affects all ents) override this. '''
-        self.do_step_all(for ent in unfiltered_list
-                if all( (comp in ent) for comp in criteria)])
+        self.do_step_all([ent for ent in unfiltered_list.values()
+                if all([True for comp in self.criteria if comp in ent])])
 
     def do_step_all(self, ents):
         ''' This is called with a list of ents that matches the
@@ -61,7 +82,15 @@ class Entity(dict):
 
     Note that beecause this is a dict, you can just pass
     a dict of the components you'd like in and it'll just
-    work.'''
+    work.
+    
+    Ensure that components all implement a to_string function,
+    otherwise there will be issues because the plan is to use
+    stringified components as the basis for the hashes that will
+    determine if the states are locked in.
+
+    '''
+
 
 
     __getattr__ = dict.get
@@ -72,8 +101,7 @@ class Entity(dict):
 class DeletionSystem(System):
     def __init__(self, mgr):
         self.mgr = mgr
-
-    criteria = ['del', 'id']
+        self.criteria = ['del', 'id']
 
     def do_step_all(self, ents):
         to_delete = []

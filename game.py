@@ -2,7 +2,7 @@ import pygame
 
 import net
 import commands
-
+from ecs import System, EntityManager, Entity
 
 TIMER_EVENT = pygame.USEREVENT + 1
 STEP_LENGTH = 250 # ms (250 is 4 times per second)
@@ -19,6 +19,9 @@ class Game:
         self.step = None
         self.command_list = None
         self.mousedown = 0
+        self.entities = EntityManager(systems=[
+            CircleDrawSystem(screen=self.screen)
+        ])
 
     def start(self):
         self.command_list = []
@@ -31,27 +34,41 @@ class Game:
             pygame.display.flip()
 
     def process_event(self, event):
-        if event.type == pygame.MOUSEBUTTONUP and mousedown:
+        if event.type == pygame.MOUSEBUTTONUP and self.mousedown:
             self.command_list += [commands.Ping(position=event.pos)]
             self.mousedown = False
-        elif event.type == pygame.MOUSEBUTTONDOWN and not mousedown:
-            mousedown = True
+        elif event.type == pygame.MOUSEBUTTONDOWN and not self.mousedown:
+            self.mousedown = True
         elif event.type == TIMER_EVENT:
             self.advance_step()
 
     def advance_step(self):
         # Transmit accumulated commands then clear list
-        self.client.send(step, command_list)
+        self.client.send(self.step, self.command_list)
         self.command_list = [] # Set-to-new-empty, not delete
 
         # Wait for the server
         # See net for why this should not lag the game
         # TODO: Handle lag more gracefully (show "lag" screen?)
-        self.execute_step(self.client.block_until_get_step(step))
+        self.execute_step(self.client.block_until_get_step(self.step))
+        self.entities.do_step()
         # TODO: Game logic goes here
         self.step += 1 # Only advance after we've recieved a new step
 
     def execute_step(self, step):
-        for ping in in_step.commands:
+        for ping in step.commands:
             # Dummy code to draw pings
-            pygame.draw.circle(self.screen, (200, 200, 200), ping.position, 10, 2)
+            self.entities.add_ent(Entity({'pos': ping.position}))
+
+
+# Test stuff for ent-comp
+class CircleDrawSystem(System):
+    criteria = ['pos']
+
+    def __init__(self, screen):
+        self.screen = screen
+
+    
+    def do_step_individual(self, ent):
+        pygame.draw.circle(self.screen, (200, 200, 200), ent.pos, 10, 2)
+
