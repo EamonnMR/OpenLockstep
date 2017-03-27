@@ -25,6 +25,7 @@ class Game:
         self.data.load()
         self.entities = EntityManager(systems=[
             SpriteDrawSystem(screen=self.screen, sprites=self.data.sprites),
+            SpriteRotateSystem()
         ])
 
     def start(self):
@@ -62,13 +63,13 @@ class Game:
     def execute_step(self, step):
         for ping in step.commands:
             # Dummy code to draw pings
-            self.entities.add_ent(Entity({'pos': ping.position}))
+            self.entities.add_ent(Entity({'pos': ping.position, 'dir': 0}))
 
 
 # Test stuff for ent-comp
 class SpriteDrawSystem(System):
 
-    criteria = ['pos']
+    criteria = ['pos', 'dir']
 
     def __init__(self, screen, sprites):
         self.sprites = sprites
@@ -76,5 +77,11 @@ class SpriteDrawSystem(System):
 
     
     def do_step_individual(self, ent):
-        self.sprites['tank'].draw(ent.pos[0], ent.pos[1], 0, self.screen)
+        self.sprites['tank'].draw(ent.pos[0], ent.pos[1], ent.dir, self.screen)
 
+class SpriteRotateSystem(System):
+    criteria = ['dir']
+
+    def do_step_individual(self, ent):
+        ent.dir += 1;
+        ent.dir = ent.dir % 8

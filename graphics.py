@@ -15,11 +15,10 @@ class Sprite:
 
     def draw(self, x, y, frame, screen):
         frame_offset = frame * self.width
-
-        self.draw_rect.move_ip(0, frame_offset)
+        self.draw_rect.move_ip(frame_offset, 0)
         self.pos_rect.move_ip(x, y)
 
         screen.blit(self.image, self.pos_rect, area=self.draw_rect)
         
-        self.draw_rect.move_ip(0, -1 * frame_offset)
+        self.draw_rect.move_ip(frame_offset * -1, 0)
         self.pos_rect.move_ip(-1 * x, -1 * y)
