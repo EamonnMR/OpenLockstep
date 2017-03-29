@@ -26,12 +26,21 @@ class EntityManager:
             system.step(self.ents)
 
         #state_str = ''
-        #print(self.ents)
-        #for ent in self.ents.values():
-        #    state_str += str(ent)
+        print(self.ents)
+
+        state_str = ''
+
+        for ent in self.ents.values():
+            state_str += str(ent)
         
         # Return an md5 of the state to ensure that all is well
-        return True # hashlib.md5(state_str.encode()).hexdigest()
+
+        state_hash = hashlib.md5()
+        state_hash.update(state_str.encode('utf-8'))
+        state_hash_bin = state_hash.hexdigest()
+
+        print(state_hash_bin)
+        return state_hash_bin # hashlib.md5(state_str.encode()).hexdigest()
         
 
     def add_ent(self, ent):
