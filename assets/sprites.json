@@ -1,0 +1,9 @@
+{
+  "tank": {
+    "height": 53,
+    "width": 48,
+    "x_frames": 8,
+    "y_frames": 1,
+    "file": "danc_cc_by/tank.png"
+  }
+}

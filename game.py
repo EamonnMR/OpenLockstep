@@ -3,6 +3,7 @@ import pygame
 import net
 import commands
 from ecs import System, EntityManager, Entity
+from data import DataLoader
 
 TIMER_EVENT = pygame.USEREVENT + 1
 STEP_LENGTH = 250 # ms (250 is 4 times per second)
@@ -19,8 +20,12 @@ class Game:
         self.step = None
         self.command_list = None
         self.mousedown = 0
+        self.data = DataLoader(settings['assets'])
+        self.data.preload()
+        self.data.load()
         self.entities = EntityManager(systems=[
-            CircleDrawSystem(screen=self.screen)
+            SpriteDrawSystem(screen=self.screen, sprites=self.data.sprites),
+            SpriteRotateSystem()
         ])
 
     def start(self):
@@ -58,17 +63,25 @@ class Game:
     def execute_step(self, step):
         for ping in step.commands:
             # Dummy code to draw pings
-            self.entities.add_ent(Entity({'pos': ping.position}))
+            self.entities.add_ent(Entity({'pos': ping.position, 'dir': 0}))
 
 
 # Test stuff for ent-comp
-class CircleDrawSystem(System):
-    criteria = ['pos']
+class SpriteDrawSystem(System):
 
-    def __init__(self, screen):
+    criteria = ['pos', 'dir']
+
+    def __init__(self, screen, sprites):
+        self.sprites = sprites
         self.screen = screen
 
     
     def do_step_individual(self, ent):
-        pygame.draw.circle(self.screen, (200, 200, 200), ent.pos, 10, 2)
+        self.sprites['tank'].draw(ent.pos[0], ent.pos[1], ent.dir, self.screen)
 
+class SpriteRotateSystem(System):
+    criteria = ['dir']
+
+    def do_step_individual(self, ent):
+        ent.dir += 1;
+        ent.dir = ent.dir % 8
