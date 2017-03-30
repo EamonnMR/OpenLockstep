@@ -28,6 +28,7 @@ class Game:
             SpriteRotateSystem()
         ])
 
+        self.state_hash = b'0'.join([b'' for x in range(0,31)]) # 32 zeroes
     def start(self):
         self.command_list = []
         self.mousedown = False
@@ -49,14 +50,14 @@ class Game:
 
     def advance_step(self):
         # Transmit accumulated commands then clear list
-        self.client.send(self.step, self.command_list)
+        self.client.send(self.step, self.command_list, self.state_hash)
         self.command_list = [] # Set-to-new-empty, not delete
 
         # Wait for the server
         # See net for why this should not lag the game
         # TODO: Handle lag more gracefully (show "lag" screen?)
         self.execute_step(self.client.block_until_get_step(self.step))
-        self.entities.do_step()
+        self.state_hash = self.entities.do_step()
         # TODO: Game logic goes here
         self.step += 1 # Only advance after we've recieved a new step
 

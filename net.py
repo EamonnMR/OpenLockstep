@@ -15,8 +15,9 @@ def get_socket():
 class Step:
     '''Just a list of commands and an ID.
     '''
-    def __init__(self, uid, command_list=None):
+    def __init__(self, uid, command_list, state_hash):
         self.uid = uid
+        self.state_hash = state_hash
         if command_list:  # This is most definitely not the same as
             # command_list=[]
             self.commands = command_list
@@ -39,7 +40,7 @@ class Messenger:
     TODO: Make send and recieve ints use more bits, it'll make life easier.
     '''
     def send_step(self, step):
-        # First message: Unique ID of the frame (as a string because
+        # First message: Unique ID of the step (as a string because
         # it will be a very large number. Might need to use bignum.
         self.send_bytes(str(step.uid).encode('utf-8'))
 
@@ -49,13 +50,20 @@ class Messenger:
         # Remaining messages: send serialized commands
         for command in step.commands:
             self.send_bytes(command.serialize())
+        
+        # Send state hash
+        self.send_bytes(step.state_hash)
 
     def get_step(self):
-        # This mirrors the sending code closely, p
-        return Step(int(self.get_bytes().decode('utf-8')), [
-            commands.deserialize(self.get_bytes())
-            for counter in range(self.get_int())])
-
+        # This mirrors the sending code closely
+        return Step(
+            int(self.get_bytes().decode('utf-8')), # Get step ID
+            [
+                commands.deserialize(self.get_bytes()) # Get count then each
+                for counter in range(self.get_int())   # sent command
+            ], 
+            self.get_bytes()                           # get state hash
+        )
 
     class Disconnect(Exception):
         ''' Indicates that the connection is closed '''
@@ -150,12 +158,18 @@ class Server:
                 step = con.pull_step()
                 if step:
                     server_step, check_in = self.steps.setdefault(step.uid, 
-                        (Step(step.uid), 
+                        (Step(step.uid, [], None), 
                             {k: False for k, v in self.client_cons.items()}
                         )
                     )
 
                     server_step.commands += step.commands
+
+                    if not server_step.state_hash:
+                        server_step.state_hash = step.state_hash
+                    elif server_step.state_hash != step.state_hash:
+                        print("Out of sync!!!!")
+                        # TODO: Raise "out of sync exception!
 
                     check_in[con_id] = True
                     
@@ -179,11 +193,13 @@ class Client():
         self.messenger = Messenger(socket)
         # Fill buffer with empty initial steps
         # Becuase these will never be sent in by any client
-        self.steps = {k: Step(k) for k in range(STEP_AHEAD)}
+        self.steps = {k: 
+            Step(k, [], b'0'.join([b'' for x in range(0,31)]) # 32 zeroes 
+            ) for k in range(STEP_AHEAD)}
 
-    def send(self, step_uid, commands):
+    def send(self, step_uid, commands, state_hash):
         self.messenger.push_step(
-                Step(step_uid + STEP_AHEAD, commands)
+                Step(step_uid + STEP_AHEAD, commands, state_hash)
         )
         
     def block_until_get_step(self, uid):

@@ -25,9 +25,6 @@ class EntityManager:
         for system in self.systems:
             system.step(self.ents)
 
-        #state_str = ''
-        print(self.ents)
-
         state_str = ''
 
         for ent in self.ents.values():
@@ -37,9 +34,8 @@ class EntityManager:
 
         state_hash = hashlib.md5()
         state_hash.update(state_str.encode('utf-8'))
-        state_hash_bin = state_hash.hexdigest()
+        state_hash_bin = state_hash.hexdigest().encode('utf-8')
 
-        print(state_hash_bin)
         return state_hash_bin # hashlib.md5(state_str.encode()).hexdigest()
         
 
