@@ -6,8 +6,8 @@ from ecs import System, EntityManager, Entity
 from data import DataLoader
 
 TIMER_EVENT = pygame.USEREVENT + 1
-STEP_LENGTH = 250 # ms (250 is 4 times per second)
-
+# STEP_LENGTH = 250 # ms (250 is 4 times per second)
+STEP_LENGTH = 4000 # slow for debugging
 class Game:
     '''
     Calling "start" runs the game loop. Inside the game loop, the event loop
@@ -64,7 +64,7 @@ class Game:
     def execute_step(self, step):
         for ping in step.commands:
             # Dummy code to draw pings
-            self.entities.add_ent(Entity({'pos': ping.position, 'dir': 0}))
+            self.entities.add_ent(Entity({'pos': tuple(ping.position), 'dir': 0}))
 
 
 # Test stuff for ent-comp
@@ -84,5 +84,6 @@ class SpriteRotateSystem(System):
     criteria = ['dir']
 
     def do_step_individual(self, ent):
+        print('Sprite rotate system step individual')
         ent.dir += 1;
         ent.dir = ent.dir % 8

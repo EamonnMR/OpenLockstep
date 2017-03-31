@@ -150,7 +150,7 @@ class Server:
             con_id = len(self.client_cons)
             self.client_cons[con_id] = Messenger(clientsock)
             print('Connected: ' + str(address) + ' id: ' + str(con_id))
-        
+        print("All " + str(self.client_count) + " clients connected. starting")  
         # Tuple here tracks the actual step (which we build in this call)
         # and a hash that decides if every client has checked in to the server
         while True:
@@ -176,6 +176,7 @@ class Server:
 
                     # This could be the last one - check to see if we're done
                     if all(check_in.values()):
+                        print('finished step: ' + str(server_step.uid))
                         for con_id, con in self.client_cons.items():
                             con.push_step(server_step)
 
@@ -203,6 +204,7 @@ class Client():
         )
         
     def block_until_get_step(self, uid):
+        print("Trying to get step " + str(uid))
         while True:
             if uid in self.steps:
                 step = self.steps[uid]
@@ -211,4 +213,5 @@ class Client():
             else:
                 step = self.messenger.pull_step()
                 if step:
+                    print('got step: ' + str(step.uid))
                     self.steps[step.uid] = step

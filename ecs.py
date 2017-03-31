@@ -25,18 +25,21 @@ class EntityManager:
         for system in self.systems:
             system.step(self.ents)
 
-        state_str = ''
+        # Hash the state for integrity
+
+        state_as_set = set()
 
         for ent in self.ents.values():
-            state_str += str(ent)
-        
-        # Return an md5 of the state to ensure that all is well
+            state_as_set.add(frozenset(ent.items()))
+       
 
-        state_hash = hashlib.md5()
-        state_hash.update(state_str.encode('utf-8'))
-        state_hash_bin = state_hash.hexdigest().encode('utf-8')
+        print(state_as_set)
 
-        return state_hash_bin # hashlib.md5(state_str.encode()).hexdigest()
+        # TODO: Is there a saner way to get the hash to bytes?
+        state_hash = str(hash(frozenset(state_as_set))).encode('utf-8')
+        print(state_hash)
+
+        return state_hash
         
 
     def add_ent(self, ent):
@@ -102,6 +105,7 @@ class Entity(dict):
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
+    
 
 class DeletionSystem(System):
     def __init__(self, mgr):
