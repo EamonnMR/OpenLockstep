@@ -7,7 +7,6 @@ from data import DataLoader
 
 TIMER_EVENT = pygame.USEREVENT + 1
 STEP_LENGTH = 250 # ms (250 is 4 times per second)
-
 class Game:
     '''
     Calling "start" runs the game loop. Inside the game loop, the event loop
@@ -28,6 +27,7 @@ class Game:
             SpriteRotateSystem()
         ])
 
+        self.state_hash = b'0'.join([b'' for x in range(0,31)]) # 32 zeroes
     def start(self):
         self.command_list = []
         self.mousedown = False
@@ -49,21 +49,21 @@ class Game:
 
     def advance_step(self):
         # Transmit accumulated commands then clear list
-        self.client.send(self.step, self.command_list)
+        self.client.send(self.step, self.command_list, self.state_hash)
         self.command_list = [] # Set-to-new-empty, not delete
 
         # Wait for the server
         # See net for why this should not lag the game
         # TODO: Handle lag more gracefully (show "lag" screen?)
         self.execute_step(self.client.block_until_get_step(self.step))
-        self.entities.do_step()
+        self.state_hash = self.entities.do_step()
         # TODO: Game logic goes here
         self.step += 1 # Only advance after we've recieved a new step
 
     def execute_step(self, step):
         for ping in step.commands:
             # Dummy code to draw pings
-            self.entities.add_ent(Entity({'pos': ping.position, 'dir': 0}))
+            self.entities.add_ent(Entity({'pos': tuple(ping.position), 'dir': 0}))
 
 
 # Test stuff for ent-comp
