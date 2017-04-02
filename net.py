@@ -204,7 +204,6 @@ class Client():
         )
         
     def block_until_get_step(self, uid):
-        print("Trying to get step " + str(uid))
         while True:
             if uid in self.steps:
                 step = self.steps[uid]
@@ -213,5 +212,4 @@ class Client():
             else:
                 step = self.messenger.pull_step()
                 if step:
-                    print('got step: ' + str(step.uid))
                     self.steps[step.uid] = step

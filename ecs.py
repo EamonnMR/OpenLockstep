@@ -35,13 +35,11 @@ class EntityManager:
 
         frozen_state = tuple(state)
 
-        print(frozen_state)
 
         # TODO: Is there a saner way to get the hash to bytes?
         state_hash = hashlib.md5(
                 str(frozen_state).encode('utf-8')
                 ).hexdigest().encode('utf-8')
-        print(state_hash)
 
         return state_hash
         
