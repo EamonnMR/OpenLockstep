@@ -27,16 +27,20 @@ class EntityManager:
 
         # Hash the state for integrity
 
-        state_as_set = set()
+        state = []
 
         for ent in self.ents.values():
-            state_as_set.add(frozenset(ent.items()))
+            state.append(tuple(sorted(ent.items())))
        
 
-        print(state_as_set)
+        frozen_state = tuple(state)
+
+        print(frozen_state)
 
         # TODO: Is there a saner way to get the hash to bytes?
-        state_hash = str(hash(frozenset(state_as_set))).encode('utf-8')
+        state_hash = hashlib.md5(
+                str(frozen_state).encode('utf-8')
+                ).hexdigest().encode('utf-8')
         print(state_hash)
 
         return state_hash
@@ -104,7 +108,6 @@ class Entity(dict):
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
-
     
 
 class DeletionSystem(System):
