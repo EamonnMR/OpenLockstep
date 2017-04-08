@@ -48,7 +48,7 @@ class Messenger:
 
         # Remaining messages: send serialized commands
         for command in step.commands:
-            self.send_bytes(command.serialize())
+            self.send_bytes(commands.serialize(command))
 
     def get_step(self):
         # This mirrors the sending code closely, p
