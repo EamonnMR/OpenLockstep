@@ -7,6 +7,8 @@ import queue # Use Async io Queue?
 import commands
 
 STEP_AHEAD = 1
+INITIAL_STEP = 1
+HANDSHAKE_STEP = 0
 
 def get_socket():
     return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -18,7 +20,7 @@ class Step:
     def __init__(self, uid, command_list=None):
         self.uid = uid
         if command_list:  # This is most definitely not the same as
-            # command_list=[]
+            # command_list=[] in the arguments
             self.commands = command_list
         else:
             self.commands = []
@@ -37,6 +39,7 @@ class Messenger:
     this is where you'd implement the reliability.
 
     TODO: Make send and recieve ints use more bits, it'll make life easier.
+    UPDATE: This is a major pain to do
     '''
     def send_step(self, step):
         # First message: Unique ID of the frame (as a string because
@@ -100,6 +103,7 @@ class Messenger:
         def __init__(self, parent):
             threading.Thread.__init__(self)
             self.parent = parent
+            self.daemon = True # This kills child threads when main thread exits
             
     class Reciever(SubThread):
         def run(self):
@@ -140,7 +144,10 @@ class Server:
             clientsock, address = self.socket.accept()
             print(address)
             con_id = len(self.client_cons)
-            self.client_cons[con_id] = Messenger(clientsock)
+            client_con = Messenger(clientsock)
+            self.client_cons[con_id] = client_con
+            client_con.push_step(
+                    Step(0, [commands.Handshake([10,10], con_id)]))
             print('Connected: ' + str(address) + ' id: ' + str(con_id))
         
         # Tuple here tracks the actual step (which we build in this call)
@@ -179,7 +186,9 @@ class Client():
         self.messenger = Messenger(socket)
         # Fill buffer with empty initial steps
         # Becuase these will never be sent in by any client
-        self.steps = {k: Step(k) for k in range(STEP_AHEAD)}
+        self.steps = {k: Step(k) 
+                for k in range(INITIAL_STEP,
+                               INITIAL_STEP + 1 + STEP_AHEAD)}
 
     def send(self, step_uid, commands):
         self.messenger.push_step(
@@ -188,6 +197,7 @@ class Client():
         
     def block_until_get_step(self, uid):
         while True:
+            print(self.steps)
             if uid in self.steps:
                 step = self.steps[uid]
                 del self.steps[uid]

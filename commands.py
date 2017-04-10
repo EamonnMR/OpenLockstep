@@ -57,10 +57,11 @@ class Ping(Command):
         self.position = position
 
 class Handshake(Command):
-    net_members = ['start_building']
+    net_members = ['start_building', 'your_id']
 
-    def __init__(self, start_building):
+    def __init__(self, start_building=[0,0], your_id=0):
         self.start_building = start_building
+        self.your_id = your_id
 
 
 INDEX_TO_COMMAND = {

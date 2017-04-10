@@ -1,3 +1,5 @@
+import sys
+
 import pygame
 
 import net
@@ -28,10 +30,22 @@ class Game:
             SpriteRotateSystem()
         ])
 
+    def do_handshake(self):
+        hs_step = self.client.block_until_get_step(net.HANDSHAKE_STEP)
+        for command in hs_step.commands:
+            if type(command) == commands.Handshake:
+                self.entities.add_ent(Entity({'pos': command.start_building,
+                    'dir': 0}))
+
+                self.player_id = command.your_id
+        
+        print("Handshake complete. Your player ID: {}".format(id))
+
     def start(self):
         self.command_list = []
         self.mousedown = False
-        self.step = 0
+        self.do_handshake()
+        self.step = net.INITIAL_STEP
         pygame.time.set_timer(TIMER_EVENT, STEP_LENGTH)
         while True:
             for event in pygame.event.get():
@@ -46,6 +60,9 @@ class Game:
             self.mousedown = True
         elif event.type == TIMER_EVENT:
             self.advance_step()
+        elif event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit(1)
 
     def advance_step(self):
         # Transmit accumulated commands then clear list
@@ -61,9 +78,11 @@ class Game:
         self.step += 1 # Only advance after we've recieved a new step
 
     def execute_step(self, step):
-        for ping in step.commands:
-            # Dummy code to draw pings
-            self.entities.add_ent(Entity({'pos': ping.position, 'dir': 0}))
+        for command in step.commands:
+            if type(command) == commands.Ping:
+                # Dummy code to draw pings
+                self.entities.add_ent(Entity({'pos': command.position,
+                                              'dir': 0}))
 
 
 # Test stuff for ent-comp
