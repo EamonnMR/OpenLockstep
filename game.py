@@ -29,6 +29,7 @@ class Game:
             SpriteDrawSystem(screen=self.screen, sprites=self.data.sprites),
             SpriteRotateSystem()
         ])
+        self.player_id = None
 
     def do_handshake(self):
         hs_step = self.client.block_until_get_step(net.HANDSHAKE_STEP)
@@ -39,7 +40,7 @@ class Game:
 
                 self.player_id = command.your_id
         
-        print("Handshake complete. Your player ID: {}".format(id))
+        print("Handshake complete. Your player ID: {}".format(self.player_id))
 
     def start(self):
         self.command_list = []
