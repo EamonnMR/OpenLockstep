@@ -9,6 +9,7 @@ import commands
 STEP_AHEAD = 1
 INITIAL_STEP = 1
 HANDSHAKE_STEP = 0
+EMPTY_HASH = b'0'.join([b'' for x in range(0,31)]) # 32 zeroes
 
 def get_socket():
     return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -17,8 +18,9 @@ def get_socket():
 class Step:
     '''Just a list of commands and an ID.
     '''
-    def __init__(self, uid, command_list=None):
+    def __init__(self, uid, command_list, state_hash):
         self.uid = uid
+        self.state_hash = state_hash
         if command_list:  # This is most definitely not the same as
             # command_list=[] in the arguments
             self.commands = command_list
@@ -42,7 +44,7 @@ class Messenger:
     UPDATE: This is a major pain to do
     '''
     def send_step(self, step):
-        # First message: Unique ID of the frame (as a string because
+        # First message: Unique ID of the step (as a string because
         # it will be a very large number. Might need to use bignum.
         self.send_bytes(str(step.uid).encode('utf-8'))
 
@@ -52,13 +54,20 @@ class Messenger:
         # Remaining messages: send serialized commands
         for command in step.commands:
             self.send_bytes(commands.serialize(command))
+        
+        # Send state hash
+        self.send_bytes(step.state_hash)
 
     def get_step(self):
-        # This mirrors the sending code closely, p
-        return Step(int(self.get_bytes().decode('utf-8')), [
-            commands.deserialize(self.get_bytes())
-            for counter in range(self.get_int())])
-
+        # This mirrors the sending code closely
+        return Step(
+            int(self.get_bytes().decode('utf-8')), # Get step ID
+            [
+                commands.deserialize(self.get_bytes()) # Get count then each
+                for counter in range(self.get_int())   # sent command
+            ], 
+            self.get_bytes()                           # get state hash
+        )
 
     class Disconnect(Exception):
         ''' Indicates that the connection is closed '''
@@ -147,9 +156,10 @@ class Server:
             client_con = Messenger(clientsock)
             self.client_cons[con_id] = client_con
             client_con.push_step(
-                    Step(0, [commands.Handshake([10,10], con_id)]))
+                    Step(0, [commands.Handshake([10,10], con_id)], EMPTY_HASH)
+            )
             print('Connected: ' + str(address) + ' id: ' + str(con_id))
-        
+        print("All " + str(self.client_count) + " clients connected. starting")  
         # Tuple here tracks the actual step (which we build in this call)
         # and a hash that decides if every client has checked in to the server
         while True:
@@ -157,18 +167,25 @@ class Server:
                 step = con.pull_step()
                 if step:
                     server_step, check_in = self.steps.setdefault(step.uid, 
-                        (Step(step.uid), 
+                        (Step(step.uid, [], None), 
                             {k: False for k, v in self.client_cons.items()}
                         )
                     )
 
                     server_step.commands += step.commands
 
+                    if not server_step.state_hash:
+                        server_step.state_hash = step.state_hash
+                    elif server_step.state_hash != step.state_hash:
+                        print("Out of sync!!!!")
+                        # TODO: Raise "out of sync exception!
+
                     check_in[con_id] = True
                     
 
                     # This could be the last one - check to see if we're done
                     if all(check_in.values()):
+                        print('finished step: ' + str(server_step.uid))
                         for con_id, con in self.client_cons.items():
                             con.push_step(server_step)
 
@@ -186,13 +203,14 @@ class Client():
         self.messenger = Messenger(socket)
         # Fill buffer with empty initial steps
         # Becuase these will never be sent in by any client
-        self.steps = {k: Step(k) 
-                for k in range(INITIAL_STEP,
-                               INITIAL_STEP + 1 + STEP_AHEAD)}
+        self.steps = {k: Step(k, [], EMPTY_HASH)
+                      for k in range(INITIAL_STEP,
+                                     INITIAL_STEP + 1 + STEP_AHEAD)
+                     }
 
-    def send(self, step_uid, commands):
+    def send(self, step_uid, commands, state_hash):
         self.messenger.push_step(
-                Step(step_uid + STEP_AHEAD, commands)
+                Step(step_uid + STEP_AHEAD, commands, state_hash)
         )
         
     def block_until_get_step(self, uid):
