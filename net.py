@@ -185,7 +185,6 @@ class Server:
 
                     # This could be the last one - check to see if we're done
                     if all(check_in.values()):
-                        print('finished step: ' + str(server_step.uid))
                         for con_id, con in self.client_cons.items():
                             con.push_step(server_step)
 
