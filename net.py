@@ -7,6 +7,9 @@ import queue # Use Async io Queue?
 import commands
 
 STEP_AHEAD = 1
+INITIAL_STEP = 1
+HANDSHAKE_STEP = 0
+EMPTY_HASH = b'0'.join([b'' for x in range(0,31)]) # 32 zeroes
 
 def get_socket():
     return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -19,7 +22,7 @@ class Step:
         self.uid = uid
         self.state_hash = state_hash
         if command_list:  # This is most definitely not the same as
-            # command_list=[]
+            # command_list=[] in the arguments
             self.commands = command_list
         else:
             self.commands = []
@@ -38,6 +41,7 @@ class Messenger:
     this is where you'd implement the reliability.
 
     TODO: Make send and recieve ints use more bits, it'll make life easier.
+    UPDATE: This is a major pain to do
     '''
     def send_step(self, step):
         # First message: Unique ID of the step (as a string because
@@ -49,7 +53,7 @@ class Messenger:
 
         # Remaining messages: send serialized commands
         for command in step.commands:
-            self.send_bytes(command.serialize())
+            self.send_bytes(commands.serialize(command))
         
         # Send state hash
         self.send_bytes(step.state_hash)
@@ -108,6 +112,7 @@ class Messenger:
         def __init__(self, parent):
             threading.Thread.__init__(self)
             self.parent = parent
+            self.daemon = True # This kills child threads when main thread exits
             
     class Reciever(SubThread):
         def run(self):
@@ -148,7 +153,11 @@ class Server:
             clientsock, address = self.socket.accept()
             print(address)
             con_id = len(self.client_cons)
-            self.client_cons[con_id] = Messenger(clientsock)
+            client_con = Messenger(clientsock)
+            self.client_cons[con_id] = client_con
+            client_con.push_step(
+                    Step(0, [commands.Handshake([10,10], con_id)], EMPTY_HASH)
+            )
             print('Connected: ' + str(address) + ' id: ' + str(con_id))
         print("All " + str(self.client_count) + " clients connected. starting")  
         # Tuple here tracks the actual step (which we build in this call)
@@ -176,7 +185,6 @@ class Server:
 
                     # This could be the last one - check to see if we're done
                     if all(check_in.values()):
-                        print('finished step: ' + str(server_step.uid))
                         for con_id, con in self.client_cons.items():
                             con.push_step(server_step)
 
@@ -194,9 +202,10 @@ class Client():
         self.messenger = Messenger(socket)
         # Fill buffer with empty initial steps
         # Becuase these will never be sent in by any client
-        self.steps = {k: 
-            Step(k, [], b'0'.join([b'' for x in range(0,31)]) # 32 zeroes 
-            ) for k in range(STEP_AHEAD)}
+        self.steps = {k: Step(k, [], EMPTY_HASH)
+                      for k in range(INITIAL_STEP,
+                                     INITIAL_STEP + 1 + STEP_AHEAD)
+                     }
 
     def send(self, step_uid, commands, state_hash):
         self.messenger.push_step(

@@ -1,13 +1,22 @@
 import json
 
 
+class UnknownCommand(Exception):
+    ''' Indicates that a command type or ID cannot be mapped '''
+    pass
 
 def deserialize(data):
     if data:
-        return Ping.deserialize(data)
+        command_type = data[0]
+        if command_type in INDEX_TO_COMMAND:
+            return INDEX_TO_COMMAND[command_type].deserialize(data[1:])
+        else:
+            raise UnknownCommand()
     else:
         return None
 
+def serialize(command):
+   return COMMAND_TO_INDEX[type(command).__name__] + command.serialize()
 
 class Command:
     ''' Command: An instruction for units to be sent over the network
@@ -47,3 +56,17 @@ class Ping(Command):
     def __init__(self, position=[0,0]):
         self.position = position
 
+class Handshake(Command):
+    net_members = ['start_building', 'your_id']
+
+    def __init__(self, start_building=[0,0], your_id=0):
+        self.start_building = start_building
+        self.your_id = your_id
+
+
+INDEX_TO_COMMAND = {
+    1: Ping,
+    2: Handshake
+}
+
+COMMAND_TO_INDEX = dict((item[1].__name__, bytes([item[0]])) for item in INDEX_TO_COMMAND.items())
