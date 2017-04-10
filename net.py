@@ -197,7 +197,6 @@ class Client():
         
     def block_until_get_step(self, uid):
         while True:
-            print(self.steps)
             if uid in self.steps:
                 step = self.steps[uid]
                 del self.steps[uid]
