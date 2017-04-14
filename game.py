@@ -6,6 +6,7 @@ import net
 import commands
 from ecs import System, EntityManager, Entity
 from data import DataLoader
+from gui import GUI
 
 TIMER_EVENT = pygame.USEREVENT + 1
 STEP_LENGTH = 250 # ms (250 is 4 times per second)
@@ -42,6 +43,13 @@ class Game:
         print("Handshake complete. Your player ID: {}".format(self.player_id))
 
         self.state_hash = net.EMPTY_HASH 
+        
+        # TODO: When implementing factions/game modes, use this area to
+        # instantiate the GUI differently based on the handshake.
+        # For now we hard code how the GUI will look.
+        self.gui = GUI(self.data.sprites['scand_mouse'],
+                self.screen)
+
 
     def start(self):
         self.command_list = []
