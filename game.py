@@ -41,7 +41,8 @@ class Game:
         
         print("Handshake complete. Your player ID: {}".format(self.player_id))
 
-        self.state_hash = b'0'.join([b'' for x in range(0,31)]) # 32 zeroes
+        self.state_hash = net.EMPTY_HASH 
+
     def start(self):
         self.command_list = []
         self.mousedown = False
