@@ -26,7 +26,7 @@ class DataLoader:
         ''' Loads images  '''
         for name, data in self.data['sprites'].items():
            self.sprites[name] = Sprite(
-               pygame.image.load(self._fname(data['file'])).convert(),
+               pygame.image.load(self._fname(data['file'])).convert_alpha(),
                data['x_frames'],
                data['y_frames'],
                data['width'],
