@@ -2,7 +2,8 @@ import pygame
 
 class GUI:
     def __init__(self, mouse_spr, screen):
-        self.mouse = NormalMouse(self, mouse_spr)
+        self.mouse = NormalMouse(mouse_spr, self)
+        self.screen = screen
 
     def handle_event(self, event):
         pass
@@ -29,6 +30,7 @@ class MouseMode:
 
 class NormalMouse(MouseMode):
     def __init__(self, sprite, parent):
+        pygame.mouse.set_visible(False)
         self.parent = parent
         self.sprite = sprite
 
@@ -36,4 +38,5 @@ class NormalMouse(MouseMode):
         x, y = pygame.mouse.get_pos()
         self.sprite.draw(x=x, y=y,
                 frame=12, # TODO: Idea: sprites with named frames?
-                screen=parent.screen)
+                screen=self.parent.screen)
+

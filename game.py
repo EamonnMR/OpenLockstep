@@ -25,10 +25,16 @@ class Game:
         self.data = DataLoader(settings['assets'])
         self.data.preload()
         self.data.load()
-        self.entities = EntityManager(systems=[
-            SpriteDrawSystem(screen=self.screen, sprites=self.data.sprites),
-            SpriteRotateSystem()
-        ])
+        self.entities = EntityManager(
+            systems=[
+                SpriteRotateSystem()
+            ],
+            draw_systems=[
+                SpriteDrawSystem(screen=self.screen, sprites=self.data.sprites),
+            ]
+        )
+
+
         self.player_id = None
 
     def do_handshake(self):
@@ -58,8 +64,11 @@ class Game:
         self.step = net.INITIAL_STEP
         pygame.time.set_timer(TIMER_EVENT, STEP_LENGTH)
         while True:
+            self.clear_buffer()  # We won't need to do this when we draw a map 
             for event in pygame.event.get():
                 self.process_event(event)
+            self.entities.draw()
+            self.gui.draw()
             pygame.display.flip()
 
     def process_event(self, event):
@@ -93,6 +102,9 @@ class Game:
                 # Dummy code to draw pings
                 self.entities.add_ent(Entity({'pos': tuple(command.position),
                                               'dir': 0}))
+
+    def clear_buffer(self):
+        self.screen.fill((0,0,0))
 
 # Test stuff for ent-comp
 class SpriteDrawSystem(System):

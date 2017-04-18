@@ -11,7 +11,7 @@ For a discussion of entity/component.
 import hashlib
 
 class EntityManager:
-    def __init__(self, ents=None, systems=None):
+    def __init__(self, ents=None, systems=None, draw_systems=None):
         self.ent_count = 0
         self.ents = ents
         if not self.ents:
@@ -20,6 +20,10 @@ class EntityManager:
         self.systems = systems
         if not self.systems:
             self.systems = [] # TODO: Put removal system here?
+
+        self.draw_systems = draw_systems
+        if not self.draw_systems:
+            self.draw_systems = []
 
     def do_step(self):
         for system in self.systems:
@@ -42,7 +46,12 @@ class EntityManager:
                 ).hexdigest().encode('utf-8')
 
         return state_hash
-        
+    
+    def draw(self):
+        # This should have no side effects
+        for system in self.draw_systems:
+            system.step(self.ents)
+
 
     def add_ent(self, ent):
         # TODO: Could this live in the entity constructor?
