@@ -72,16 +72,15 @@ class Game:
             pygame.display.flip()
 
     def process_event(self, event):
-        if event.type == pygame.MOUSEBUTTONUP and self.mousedown:
-            self.command_list += [commands.Ping(position=event.pos)]
-            self.mousedown = False
-        elif event.type == pygame.MOUSEBUTTONDOWN and not self.mousedown:
-            self.mousedown = True
-        elif event.type == TIMER_EVENT:
+        if event.type == TIMER_EVENT:
             self.advance_step()
         elif event.type == pygame.QUIT:
             pygame.quit()
             sys.exit(1)
+        else:
+            command = self.gui.handle_event(event)
+            if command:
+                self.command_list += command
 
     def advance_step(self):
         # Transmit accumulated commands then clear list
