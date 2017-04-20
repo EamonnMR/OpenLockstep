@@ -12,5 +12,12 @@
     "x_frames": 14,
     "y_frames": 1,
     "file": "danc_cc_by/mouse.png"
+  },
+  "scand_selection": {
+    "height": 66,
+    "width": 88,
+    "x_frames": 3,
+    "y_frames": 1,
+    "file": "selection.png"
   }
 }

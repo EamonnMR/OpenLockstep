@@ -11,9 +11,14 @@ For a discussion of entity/component.
 import hashlib
 
 class EntityManager:
-    def __init__(self, ents=None, systems=None, draw_systems=None):
+    def __init__(self, ents=None, systems=None,
+                 draw_systems=None, filters=None):
         self.ent_count = 0
         self.ents = ents
+        self.filters = filters
+        if not self.filters:
+            self.filters = {}
+
         if not self.ents:
             self.ents = {}
 
@@ -59,6 +64,34 @@ class EntityManager:
         ent.id = id
         self.ents[id] = ent
         self.ent_count += 1
+
+    def filter(self, filter_id, **kwargs):
+        return self.filters[filter_id].apply(self.ents, kwargs)
+
+    # TODO: Add system, add filter, remove, etc
+    def add_draw_system(self, new_draw_system, index=None):
+        if index:
+            self.draw_systems.insert(index, new_draw_system)
+        else:
+            self.draw_systems.append(new_draw_system)
+
+class Filter:
+    ''' Abstract class for a filter object which has an 'apply' method
+    which accepts a dict of criteria and returns a list of ids of ents that
+    match that criterium. '''
+
+    def apply_individual(self, ent, criteria):
+        pass
+
+    def apply(self, ents, criteria):
+        ''' Checks each ent and returns the id if it meets the criteria
+        (if we return something from check_individual)
+        This can be overridden if the Filter, for example, cares about the
+        whole state rather than each ent's state.'''
+        return [result.id for result in 
+                [self.apply_individual(ent, criteria)
+                    for id, ent in ents.items()]
+                if result]
 
 
 class System:
@@ -129,4 +162,5 @@ class DeletionSystem(System):
             to_delete.append(ent.id)
 
         for id in to_delete:
-           del mgr.ents[id] 
+           del mgr.ents[id]
+

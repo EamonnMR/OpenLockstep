@@ -1,9 +1,13 @@
 import pygame
 
+import ecs
+
 class GUI:
-    def __init__(self, mouse_spr, screen):
+    def __init__(self, ecs, mouse_spr, screen):
         self.mouse = NormalMouse(mouse_spr, self)
         self.screen = screen
+        self.selected_units = []
+        self.ecs = ecs
 
     def handle_event(self, event):
         ''' Returns commands if any'''
@@ -59,15 +63,17 @@ class NormalMouse(MouseMode):
                              (200, 200, 250),
                              self.selection_box, 
                              1)
-
-        self.sprite.draw(x=x, y=y,
-                frame=11 if self.dragging else 12, 
+        self.sprite.draw(x, y,
+                11 if self.dragging else 12, 
                 # TODO: Idea: sprites with named frames?
-                screen=self.parent.screen)
+                self.parent.screen)
     
     def up(self):
         self.dragging = False
-        self.selection_box = None # Select all units in this box
+        self.parent.selected_units = \
+                self.parent.ecs.filter('RectFilter',
+                        rect=self.selection_box)
+        self.selection_box = None
 
     def down(self):
         self.dragging = True
@@ -80,3 +86,24 @@ class NormalMouse(MouseMode):
         w = nx - x
         h = ny - y
         self.selection_box = pygame.Rect(x, y, w, h)
+
+class RectFilter(ecs.Filter):
+    def apply_individual(self, ent, criteria):
+        ''' criteria: {'rect': pygame.Rect}
+        Checks to see if the entity is within the selected rect.'''
+        # TODO: Quadtre or some such
+        if 'pos' in ent and criteria['rect'].collidepoint(ent.pos):
+            return ent
+
+
+class SelectionDrawSystem(ecs.System):
+    def __init__(self, screen, gui, sprite):
+        self.criteria = ['pos']
+        self.gui = gui
+        self.sprite = sprite
+
+    def do_step_all(self, ents):
+        for ent in ents:
+            if ent.id in self.gui.selected_units:
+                self.sprite.draw(x=ent.pos[0], y=ent.pos[1],
+                        frame=0, screen=self.gui.screen)

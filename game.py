@@ -6,7 +6,7 @@ import net
 import commands
 from ecs import System, EntityManager, Entity
 from data import DataLoader
-from gui import GUI
+import gui
 
 TIMER_EVENT = pygame.USEREVENT + 1
 STEP_LENGTH = 250 # ms (250 is 4 times per second)
@@ -21,7 +21,7 @@ class Game:
         self.client = net.Client(args.host, args.port)
         self.step = None
         self.command_list = None
-        self.mousedown = 0
+
         self.data = DataLoader(settings['assets'])
         self.data.preload()
         self.data.load()
@@ -30,8 +30,12 @@ class Game:
                 SpriteRotateSystem()
             ],
             draw_systems=[
-                SpriteDrawSystem(screen=self.screen, sprites=self.data.sprites),
-            ]
+                SpriteDrawSystem(screen=self.screen, 
+                    sprites=self.data.sprites),
+            ],
+            filters={
+                'RectFilter': gui.RectFilter(),
+            }
         )
 
 
@@ -53,13 +57,17 @@ class Game:
         # TODO: When implementing factions/game modes, use this area to
         # instantiate the GUI differently based on the handshake.
         # For now we hard code how the GUI will look.
-        self.gui = GUI(self.data.sprites['scand_mouse'],
+        self.gui = gui.GUI(self.entities,
+                self.data.sprites['scand_mouse'],
                 self.screen)
 
+        self.entities.add_draw_system(
+                gui.SelectionDrawSystem(screen=self.screen, gui=self.gui,
+                    sprite=self.data.sprites['scand_selection']),
+                0) # We want it at 0 so as to be below the sprites.
 
     def start(self):
         self.command_list = []
-        self.mousedown = False
         self.do_handshake()
         self.step = net.INITIAL_STEP
         pygame.time.set_timer(TIMER_EVENT, STEP_LENGTH)
