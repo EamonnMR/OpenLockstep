@@ -155,7 +155,9 @@ class Server:
             client_con = Messenger(clientsock)
             self.client_cons[con_id] = client_con
             client_con.push_step(
-                    Step(0, [commands.Handshake([10,10], con_id)], EMPTY_HASH)
+                    Step(0, [
+                        commands.Handshake([100,100], con_id)], 
+                    EMPTY_HASH)
             )
             print('Connected: ' + str(address) + ' id: ' + str(con_id))
         print("All " + str(self.client_count) + " clients connected. starting")  
