@@ -81,10 +81,24 @@ class NormalMouse(MouseMode):
         self._update_selection_box()
 
     def _update_selection_box(self):
-        x, y = self.initial_drag_pos
+        ix, iy = self.initial_drag_pos
         nx, ny = pygame.mouse.get_pos()
-        w = nx - x
-        h = ny - y
+        # For some reason, selection boxes with negative heights
+        # and widths won't collide with any points.
+        if nx >= ix:
+            x = ix
+            w = nx - ix
+        else:
+            x = nx
+            w = ix - nx
+
+        if ny >= iy:
+            y = iy
+            h = ny - iy
+        else:
+            y = ny
+            h = iy - ny
+
         self.selection_box = pygame.Rect(x, y, w, h)
 
 class RectFilter(ecs.Filter):
