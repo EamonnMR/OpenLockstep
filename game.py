@@ -4,7 +4,7 @@ import pygame
 
 import net
 import commands
-from ecs import System, EntityManager, Entity
+from ecs import System, DrawSystem, EntityManager, Entity
 from data import DataLoader
 import gui
 
@@ -114,7 +114,7 @@ class Game:
         self.screen.fill((0,0,0))
 
 # Test stuff for ent-comp
-class SpriteDrawSystem(System):
+class SpriteDrawSystem(DrawSystem):
 
     criteria = ['pos', 'dir']
 
@@ -123,7 +123,7 @@ class SpriteDrawSystem(System):
         self.screen = screen
 
     
-    def do_step_individual(self, ent):
+    def draw_individual(self, ent):
         self.sprites['tank'].draw(ent.pos[0], ent.pos[1], ent.dir, self.screen)
 
 class SpriteRotateSystem(System):

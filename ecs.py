@@ -55,7 +55,7 @@ class EntityManager:
     def draw(self):
         # This should have no side effects
         for system in self.draw_systems:
-            system.step(self.ents)
+            system.draw(self.ents)
 
 
     def add_ent(self, ent):
@@ -74,6 +74,13 @@ class EntityManager:
             self.draw_systems.insert(index, new_draw_system)
         else:
             self.draw_systems.append(new_draw_system)
+
+    def add_system(self, new_system, index=None):
+        if index:
+            self.systems.insert(index, new_system)
+        else:
+            self.systems.append(new_system)
+
 
 class Filter:
     ''' Abstract class for a filter object which has an 'apply' method
@@ -119,6 +126,28 @@ class System:
         '''By default this is called for every ent that meets the
         criteria. Use this for systems where every ent moves
         independantly, such as velocity.'''
+        pass
+
+class DrawSystem:
+    ''' Abstract base class for draw systems '''
+    def __init__(self):
+        self.criteria = []
+
+    def draw(self, unfiltered_list):
+        ''' This is called with a list of all of the ents. If the system
+        needs filtering beyond checking criteria, override this method.'''
+        self.draw_all([ent for ent in unfiltered_list.values()
+            if all([True for comp in self.criteria if comp in ent])]) 
+
+    def draw_all(self, ents):
+        ''' This is called on all ents that meet criteria. Use this to
+        do draws that involve multiple entities '''
+        for ent in ents:
+            self.draw_individual(ent)
+
+    def draw_individual(self, ent):
+        '''Called for each ent that meets the criteria. Use this for
+        simple drawing, such as drawing a sprite for each unit.'''
         pass
 
 

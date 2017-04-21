@@ -110,13 +110,13 @@ class RectFilter(ecs.Filter):
             return ent
 
 
-class SelectionDrawSystem(ecs.System):
+class SelectionDrawSystem(ecs.DrawSystem):
     def __init__(self, screen, gui, sprite):
         self.criteria = ['pos']
         self.gui = gui
         self.sprite = sprite
 
-    def do_step_all(self, ents):
+    def draw_all(self, ents):
         for ent in ents:
             if ent.id in self.gui.selected_units:
                 self.sprite.draw(x=ent.pos[0], y=ent.pos[1],
