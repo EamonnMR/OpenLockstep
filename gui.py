@@ -12,9 +12,16 @@ class GUI:
     def handle_event(self, event):
         ''' Returns commands if any'''
         if event.type == pygame.MOUSEBUTTONUP:
-            return self.mouse.up()
+            if event.button == 1:
+                return self.mouse.left_up()
+            elif event.button == 3:
+                return self.mouse.right_up()
+
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            return self.mouse.down()
+            if event.button == 1:
+                return self.mouse.left_down()
+            elif event.button == 3:
+                return self.mouse.right_down()
         else:
             return None
 
@@ -32,16 +39,16 @@ class MouseMode:
     def set_pos(self):
         pass
 
-    def left_press(self):
+    def right_up(self):
         pass
 
-    def left_release(self):
+    def right_down(self):
         pass
 
-    def up(self):
+    def left_up(self):
         pass
 
-    def down(self):
+    def left_down(self):
         pass
 
 class NormalMouse(MouseMode):
@@ -68,14 +75,14 @@ class NormalMouse(MouseMode):
                 # TODO: Idea: sprites with named frames?
                 self.parent.screen)
     
-    def up(self):
+    def left_up(self):
         self.dragging = False
         self.parent.selected_units = \
                 self.parent.ecs.filter('RectFilter',
                         rect=self.selection_box)
         self.selection_box = None
 
-    def down(self):
+    def left_down(self):
         self.dragging = True
         self.initial_drag_pos = pygame.mouse.get_pos()
         self._update_selection_box()
