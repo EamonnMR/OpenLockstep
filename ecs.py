@@ -108,12 +108,12 @@ class System:
     def __init__(self):
         self.criteria = []
 
-    def step(self, unfiltered_list):
+    def step(self, ents):
         ''' This is called with a list of every ent, regardless of
         what components they contain. If the system needs this (or
         always affects all ents) override this. '''
-        self.do_step_all([ent for ent in unfiltered_list.values()
-                if all([True for comp in self.criteria if comp in ent])])
+        self.do_step_all([ent for id, ent in ents.values()
+                if all([comp in ent for comp in self.criteria])])
 
     def do_step_all(self, ents):
         ''' This is called with a list of ents that matches the
