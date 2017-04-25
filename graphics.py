@@ -1,3 +1,5 @@
+import math
+
 import pygame
 
 class Sprite:
@@ -28,3 +30,8 @@ class Sprite:
         
         self.draw_rect.move_ip(frame_offset * -1, 0)
         self.pos_rect.move_ip(-1 * x, -1 * y)
+
+
+def angle_to_frame(angle):
+    return int(4 * angle / math.pi)
+

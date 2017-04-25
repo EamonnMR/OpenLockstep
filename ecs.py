@@ -112,7 +112,7 @@ class System:
         ''' This is called with a list of every ent, regardless of
         what components they contain. If the system needs this (or
         always affects all ents) override this. '''
-        self.do_step_all([ent for id, ent in ents.values()
+        self.do_step_all([ent for ent in ents.values()
                 if all([comp in ent for comp in self.criteria])])
 
     def do_step_all(self, ents):

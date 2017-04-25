@@ -1,4 +1,5 @@
 import sys
+import math
 
 import pygame
 
@@ -7,6 +8,7 @@ import commands
 from ecs import System, DrawSystem, EntityManager, Entity
 from data import DataLoader
 import gui
+import graphics
 
 TIMER_EVENT = pygame.USEREVENT + 1
 STEP_LENGTH = 250 # ms (250 is 4 times per second)
@@ -27,7 +29,7 @@ class Game:
         self.data.load()
         self.entities = EntityManager(
             systems=[
-                SpriteRotateSystem()
+                MoveSystem()
             ],
             draw_systems=[
                 SpriteDrawSystem(screen=self.screen, 
@@ -88,7 +90,7 @@ class Game:
         else:
             command = self.gui.handle_event(event)
             if command:
-                self.command_list += command
+                self.command_list.append(command)
 
     def advance_step(self):
         # Transmit accumulated commands then clear list
@@ -105,10 +107,9 @@ class Game:
 
     def execute_step(self, step):
         for command in step.commands:
-            if type(command) == commands.Ping:
-                # Dummy code to draw pings
-                self.entities.add_ent(Entity({'pos': tuple(command.position),
-                                              'dir': 0}))
+            if type(command) == commands.Move:
+                for id in command.ids:
+                    self.entities.ents[id].move_goal = command.to
 
     def clear_buffer(self):
         self.screen.fill((0,0,0))
@@ -116,19 +117,41 @@ class Game:
 # Test stuff for ent-comp
 class SpriteDrawSystem(DrawSystem):
 
-    criteria = ['pos', 'dir']
-
     def __init__(self, screen, sprites):
         self.sprites = sprites
         self.screen = screen
+        self.criteria = ['pos', 'dir']
 
     
     def draw_individual(self, ent):
         self.sprites['tank'].draw(ent.pos[0], ent.pos[1], ent.dir, self.screen)
 
 class SpriteRotateSystem(System):
-    criteria = ['dir']
+    def __init__(self):
+        self.criteria = ['dir']
 
     def do_step_individual(self, ent):
         ent.dir += 1;
         ent.dir = ent.dir % 8
+
+class MoveSystem(System):
+    def __init__(self):
+        self.criteria = ['pos', 'dir', 'move_goal']
+
+    def do_step_individual(self, ent):
+        speed = 3
+        print(ent.move_goal)
+        # TODO: Check if we've finished a move
+        angle = math.atan2(ent.move_goal[1] - ent.pos[1],
+                           ent.move_goal[0] - ent.pos[0])
+        ent.dir = graphics.angle_to_frame(angle)
+        print(angle)
+        print(ent.dir)
+        # FIXME: Using stock float functions is bad, we need fixed point
+        dx = (math.cos(angle) * speed)
+        dy = math.sin(angle) * speed
+        print('dx: {} dy: {}'.format(dx, dy))
+        ent.pos = (
+            int(ent.pos[0] + dx),
+            int(ent.pos[1] + dy)
+        )

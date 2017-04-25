@@ -1,6 +1,7 @@
 import pygame
 
 import ecs
+import commands
 
 class GUI:
     def __init__(self, ecs, mouse_spr, screen):
@@ -86,6 +87,11 @@ class NormalMouse(MouseMode):
         self.dragging = True
         self.initial_drag_pos = pygame.mouse.get_pos()
         self._update_selection_box()
+
+    def right_down(self):
+        if self.parent.selected_units:
+            return commands.Move(ids=self.parent.selected_units,
+                    to=pygame.mouse.get_pos())
 
     def _update_selection_box(self):
         ix, iy = self.initial_drag_pos
