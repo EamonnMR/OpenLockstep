@@ -140,17 +140,12 @@ class MoveSystem(System):
 
     def do_step_individual(self, ent):
         speed = 3
-        print(ent.move_goal)
-        # TODO: Check if we've finished a move
         angle = math.atan2(ent.move_goal[1] - ent.pos[1],
                            ent.move_goal[0] - ent.pos[0])
         ent.dir = graphics.angle_to_frame(angle)
-        print(angle)
-        print(ent.dir)
         # FIXME: Using stock float functions is bad, we need fixed point
         dx = (math.cos(angle) * speed)
         dy = math.sin(angle) * speed
-        print('dx: {} dy: {}'.format(dx, dy))
         ent.pos = (
             int(ent.pos[0] + dx),
             int(ent.pos[1] + dy)

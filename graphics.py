@@ -33,5 +33,12 @@ class Sprite:
 
 
 def angle_to_frame(angle):
-    return int(4 * angle / math.pi)
+    print('angle: {}'.format(angle))
+    degrees = 180 + (360 * (angle / (2 * math.pi)))
+    if degrees < 0:
+        degrees = 360 + degrees
+    print('degrees: {}'.format(degrees))
+    frame = (4 +  round(8 * (degrees / 360))) % 8
+    print('frame: {}'.format(frame))
+    return frame
 
