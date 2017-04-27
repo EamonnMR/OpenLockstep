@@ -10,7 +10,9 @@ import json
 
 import net
 import commands
-import game 
+import game
+import gui
+import ecs
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Runs OpenLockstep')
@@ -27,9 +29,19 @@ if __name__ == "__main__":
 
     settings = json.load(open(args.settings_file))
     settings.update(json.loads(args.settings))
+    ent_manager = ecs.EntityManager(
+        systems=[
+            game.MoveSystem()
+        ],
+            filters={
+                'RectFilter': gui.RectFilter(),
+            }
+        )
 
     if args.client:
-        game.Game(settings, args).start()
+        game.Game(settings, args, ent_manager).start()
     elif args.server:
-        net.Server(args.port, host=args.host, client_count=args.clients).run()
+        net.Server(args.port, host=args.host,
+                client_count=args.clients,
+                ent_manager=ent_manager).run()
 

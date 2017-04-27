@@ -17,7 +17,7 @@ class Game:
     Calling "start" runs the game loop. Inside the game loop, the event loop
     processes input and times when to finish and send a step.
     '''
-    def __init__(self, settings, args): # The settings/args split may be a pain
+    def __init__(self, settings, args, entities): # The settings/args split may be a pain
         self.screen = pygame.display.set_mode(settings['screen_size'])
         pygame.display.set_caption("OpenLockstep RTS")
         self.client = net.Client(args.host, args.port)
@@ -27,19 +27,11 @@ class Game:
         self.data = DataLoader(settings['assets'])
         self.data.preload()
         self.data.load()
-        self.entities = EntityManager(
-            systems=[
-                MoveSystem()
-            ],
-            draw_systems=[
-                SpriteDrawSystem(screen=self.screen, 
-                    sprites=self.data.sprites),
-            ],
-            filters={
-                'RectFilter': gui.RectFilter(),
-            }
+        self.entities = entities
+        self.entities.add_draw_system(
+                SpriteDrawSystem(screen=self.screen,
+                sprites=self.data.sprites)
         )
-
 
         self.player_id = None
 
