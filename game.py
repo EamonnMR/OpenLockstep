@@ -1,11 +1,14 @@
 import sys
+import math
 
 import pygame
 
 import net
 import commands
-from ecs import System, EntityManager, Entity
+from ecs import System, DrawSystem, EntityManager, Entity
 from data import DataLoader
+import gui
+import graphics
 
 TIMER_EVENT = pygame.USEREVENT + 1
 STEP_LENGTH = 250 # ms (250 is 4 times per second)
@@ -14,20 +17,22 @@ class Game:
     Calling "start" runs the game loop. Inside the game loop, the event loop
     processes input and times when to finish and send a step.
     '''
-    def __init__(self, settings, args): # The settings/args split may be a pain
+    def __init__(self, settings, args, entities): # The settings/args split may be a pain
         self.screen = pygame.display.set_mode(settings['screen_size'])
         pygame.display.set_caption("OpenLockstep RTS")
         self.client = net.Client(args.host, args.port)
         self.step = None
         self.command_list = None
-        self.mousedown = 0
+
         self.data = DataLoader(settings['assets'])
         self.data.preload()
         self.data.load()
-        self.entities = EntityManager(systems=[
-            SpriteDrawSystem(screen=self.screen, sprites=self.data.sprites),
-            SpriteRotateSystem()
-        ])
+        self.entities = entities
+        self.entities.add_draw_system(
+                graphics.SpriteDrawSystem(screen=self.screen,
+                sprites=self.data.sprites)
+        )
+
         self.player_id = None
 
     def do_handshake(self):
@@ -41,29 +46,43 @@ class Game:
         
         print("Handshake complete. Your player ID: {}".format(self.player_id))
 
-        self.state_hash = b'0'.join([b'' for x in range(0,31)]) # 32 zeroes
+        self.state_hash = net.EMPTY_HASH 
+        
+        # TODO: When implementing factions/game modes, use this area to
+        # instantiate the GUI differently based on the handshake.
+        # For now we hard code how the GUI will look.
+        self.gui = gui.GUI(self.entities,
+                self.data.sprites['scand_mouse'],
+                self.screen)
+
+        self.entities.add_draw_system(
+                gui.SelectionDrawSystem(screen=self.screen, gui=self.gui,
+                    sprite=self.data.sprites['scand_selection']),
+                0) # We want it at 0 so as to be below the sprites.
+
     def start(self):
         self.command_list = []
-        self.mousedown = False
         self.do_handshake()
         self.step = net.INITIAL_STEP
         pygame.time.set_timer(TIMER_EVENT, STEP_LENGTH)
         while True:
+            self.clear_buffer()  # We won't need to do this when we draw a map 
             for event in pygame.event.get():
                 self.process_event(event)
+            self.entities.draw()
+            self.gui.draw()
             pygame.display.flip()
 
     def process_event(self, event):
-        if event.type == pygame.MOUSEBUTTONUP and self.mousedown:
-            self.command_list += [commands.Ping(position=event.pos)]
-            self.mousedown = False
-        elif event.type == pygame.MOUSEBUTTONDOWN and not self.mousedown:
-            self.mousedown = True
-        elif event.type == TIMER_EVENT:
+        if event.type == TIMER_EVENT:
             self.advance_step()
         elif event.type == pygame.QUIT:
             pygame.quit()
             sys.exit(1)
+        else:
+            command = self.gui.handle_event(event)
+            if command:
+                self.command_list.append(command)
 
     def advance_step(self):
         # Transmit accumulated commands then clear list
@@ -80,27 +99,10 @@ class Game:
 
     def execute_step(self, step):
         for command in step.commands:
-            if type(command) == commands.Ping:
-                # Dummy code to draw pings
-                self.entities.add_ent(Entity({'pos': tuple(command.position),
-                                              'dir': 0}))
+            if type(command) == commands.Move:
+                for id in command.ids:
+                    self.entities.ents[id].move_goal = command.to
 
-# Test stuff for ent-comp
-class SpriteDrawSystem(System):
+    def clear_buffer(self):
+        self.screen.fill((0,0,0))
 
-    criteria = ['pos', 'dir']
-
-    def __init__(self, screen, sprites):
-        self.sprites = sprites
-        self.screen = screen
-
-    
-    def do_step_individual(self, ent):
-        self.sprites['tank'].draw(ent.pos[0], ent.pos[1], ent.dir, self.screen)
-
-class SpriteRotateSystem(System):
-    criteria = ['dir']
-
-    def do_step_individual(self, ent):
-        ent.dir += 1;
-        ent.dir = ent.dir % 8

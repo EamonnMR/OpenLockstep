@@ -63,10 +63,17 @@ class Handshake(Command):
         self.start_building = start_building
         self.your_id = your_id
 
+class Move(Command):
+    net_members = ['ids', 'to']
+
+    def __init__(self, ids=[], to=[0,0]):
+        self.ids = ids
+        self.to = to
 
 INDEX_TO_COMMAND = {
     1: Ping,
-    2: Handshake
+    2: Handshake,
+    3: Move,
 }
 
 COMMAND_TO_INDEX = dict((item[1].__name__, bytes([item[0]])) for item in INDEX_TO_COMMAND.items())

@@ -1,9 +1,19 @@
 {
   "tank": {
-    "height": 53,
-    "width": 48,
     "x_frames": 8,
     "y_frames": 1,
     "file": "danc_cc_by/tank.png"
+  },
+  "scand_mouse": {
+    "x_frames": 14,
+    "y_frames": 1,
+    "file": "danc_cc_by/mouse.png",
+    "x_offset": 0,
+    "y_offset": 0
+  },
+  "scand_selection": {
+    "x_frames": 3,
+    "y_frames": 1,
+    "file": "selection.png"
   }
 }
