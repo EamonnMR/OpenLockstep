@@ -13,6 +13,7 @@ import commands
 import game
 import gui
 import ecs
+import movement
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Runs OpenLockstep')
@@ -31,7 +32,7 @@ if __name__ == "__main__":
     settings.update(json.loads(args.settings))
     ent_manager = ecs.EntityManager(
         systems=[
-            game.MoveSystem()
+            movement.MoveSystem()
         ],
             filters={
                 'RectFilter': gui.RectFilter(),

@@ -29,7 +29,7 @@ class Game:
         self.data.load()
         self.entities = entities
         self.entities.add_draw_system(
-                SpriteDrawSystem(screen=self.screen,
+                graphics.SpriteDrawSystem(screen=self.screen,
                 sprites=self.data.sprites)
         )
 
@@ -106,39 +106,3 @@ class Game:
     def clear_buffer(self):
         self.screen.fill((0,0,0))
 
-# Test stuff for ent-comp
-class SpriteDrawSystem(DrawSystem):
-
-    def __init__(self, screen, sprites):
-        self.sprites = sprites
-        self.screen = screen
-        self.criteria = ['pos', 'dir']
-
-    
-    def draw_individual(self, ent):
-        self.sprites['tank'].draw(ent.pos[0], ent.pos[1], ent.dir, self.screen)
-
-class SpriteRotateSystem(System):
-    def __init__(self):
-        self.criteria = ['dir']
-
-    def do_step_individual(self, ent):
-        ent.dir += 1;
-        ent.dir = ent.dir % 8
-
-class MoveSystem(System):
-    def __init__(self):
-        self.criteria = ['pos', 'dir', 'move_goal']
-
-    def do_step_individual(self, ent):
-        speed = 3
-        angle = math.atan2(ent.move_goal[1] - ent.pos[1],
-                           ent.move_goal[0] - ent.pos[0])
-        ent.dir = graphics.angle_to_frame(angle)
-        # FIXME: Using stock float functions is bad, we need fixed point
-        dx = (math.cos(angle) * speed)
-        dy = math.sin(angle) * speed
-        ent.pos = (
-            int(ent.pos[0] + dx),
-            int(ent.pos[1] + dy)
-        )

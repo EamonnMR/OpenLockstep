@@ -2,6 +2,8 @@ import math
 
 import pygame
 
+import ecs
+
 class Sprite:
     def __init__(self, image, x_frames, y_frames,
             x_size, y_size, x_offset, y_offset):
@@ -33,6 +35,9 @@ class Sprite:
 
 
 def angle_to_frame(angle):
+    # TODO: Cleanly factor this
+    # TODO: Make this work with fixed point math
+    # TODO: Look at a graph of this function and make sure it works right
     print('angle: {}'.format(angle))
     degrees = 180 + (360 * (angle / (2 * math.pi)))
     if degrees < 0:
@@ -41,4 +46,14 @@ def angle_to_frame(angle):
     frame = (4 +  round(8 * (degrees / 360))) % 8
     print('frame: {}'.format(frame))
     return frame
+
+class SpriteDrawSystem(ecs.DrawSystem):
+    def __init__(self, screen, sprites):
+        self.sprites = sprites
+        self.screen = screen
+        self.criteria = ['pos', 'dir']
+
+
+    def draw_individual(self, ent):
+        self.sprites['tank'].draw(ent.pos[0], ent.pos[1], ent.dir, self.screen)
 
