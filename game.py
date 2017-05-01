@@ -101,7 +101,7 @@ class Game:
         for command in step.commands:
             if type(command) == commands.Move:
                 for id in command.ids:
-                    self.entities.ents[id].move_goal = command.to
+                    self.entities[id].move_goal = command.to
 
     def clear_buffer(self):
         self.screen.fill((0,0,0))
