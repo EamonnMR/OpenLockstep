@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 '''
 Main module - interprets settings and args, runs client or server.
 '''
