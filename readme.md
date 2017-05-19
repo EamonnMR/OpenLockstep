@@ -5,9 +5,9 @@ pip3 install -r requirements.txt
 
 ## Server
 
-`./main.py --server`
+`python3 main.py --server`
 
 ## Client
 
-`./main.py --client`
+`python3 main.py --client`
 

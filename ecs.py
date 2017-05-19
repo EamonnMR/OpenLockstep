@@ -14,13 +14,14 @@ class EntityManager:
     def __init__(self, ents=None, systems=None,
                  draw_systems=None, filters=None):
         self.ent_count = 0
+
         self.ents = ents
+        if not self.ents:
+            self.ents = {}
+
         self.filters = filters
         if not self.filters:
             self.filters = {}
-
-        if not self.ents:
-            self.ents = {}
 
         self.systems = systems
         if not self.systems:
@@ -80,6 +81,9 @@ class EntityManager:
             self.systems.insert(index, new_system)
         else:
             self.systems.append(new_system)
+
+    def __getitem__(self, id):
+        return self.ents[id]
 
 
 class Filter:
