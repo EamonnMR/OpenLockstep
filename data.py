@@ -2,6 +2,7 @@ import json
 import os
 
 import pygame
+import yaml
 
 from graphics import Sprite
 
@@ -12,16 +13,28 @@ class DataLoader:
         self.sprites = {}
         self.data = {}
 
+    class UnknownFileType(Exception):
+        ''' Tried to parse a file with an unsupported or unknown
+        type'''
+        pass
+
     def _get_cfg(self, name):
         ''' Gets json from a file in the data dir '''
         # TODO: Add support for yaml, etc.
-        return json.load(open(self._fname('sprites.json')))
+        text = open(self._fname(name))
+        if name.endswith('.json'):
+            return json.load(text)
+        elif name.endswith('.yml') or name.endswith('.yaml'):
+            return yaml.load(text)
+        else:
+            raise UnknownFileTypeException
+
 
     def _fname(self, fname):
         return os.path.join(self.root_dir, fname)
     def preload(self):
         ''' This loads textual data, but does not load images.'''
-        self.data['sprites'] = self._get_cfg('sprites.json')
+        self.data['sprites'] = self._get_cfg('sprites.yaml')
     def load(self):
         ''' Loads images  '''
         for name, data in self.data['sprites'].items():
