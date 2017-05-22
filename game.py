@@ -39,8 +39,8 @@ class Game:
         hs_step = self.client.block_until_get_step(net.HANDSHAKE_STEP)
         for command in hs_step.commands:
             if type(command) == commands.Handshake:
-                self.entities.add_ent(Entity({'pos': command.start_building,
-                    'dir': 0}))
+                self.entities.add_ent(self.data.spawn(utype='tank',
+                    pos=command.start_building, dir=0))
 
                 self.player_id = command.your_id
         

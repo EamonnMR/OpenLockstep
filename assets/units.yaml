@@ -1,0 +1,4 @@
+tank:
+  sprite: tank
+  speed: .5
+

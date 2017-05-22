@@ -1,11 +1,12 @@
 import json
 import os
+import copy
 
 import pygame
 import yaml
 
 from graphics import Sprite
-
+from ecs import Entity
 
 class DataLoader:
     def __init__(self, directory):
@@ -35,6 +36,7 @@ class DataLoader:
     def preload(self):
         ''' This loads textual data, but does not load images.'''
         self.data['sprites'] = self._get_cfg('sprites.yaml')
+        self.data['units'] = self._get_cfg('units.yaml')
     def load(self):
         ''' Loads images  '''
         for name, data in self.data['sprites'].items():
@@ -79,3 +81,8 @@ class DataLoader:
         return Sprite(image, x_frames, y_frames,
                 width, height, x_offset, y_offset)
 
+    def spawn(self, utype, **kwargs):
+        mutable = copy.deepcopy(self.data['units'][utype])
+        mutable.update(kwargs)
+
+        return Entity(mutable)
