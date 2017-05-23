@@ -90,7 +90,10 @@ class NormalMouse(MouseMode):
 
     def right_down(self):
         if self.parent.selected_units:
-            return commands.Move(ids=self.parent.selected_units,
+            units = [self.parent.ecs[id] for id in self.parent.selected_units]
+            # TODO: Filter-chaining should fix this
+            # TODO: Implement 'unit_set' type - iterable but also features a 'filter' option?
+            return commands.Move(ids=[unit.id for unit in units if 'movetype' in unit],
                     to=pygame.mouse.get_pos())
 
     def _update_selection_box(self):
