@@ -48,9 +48,12 @@ class SpriteDrawSystem(ecs.DrawSystem):
     def __init__(self, screen, sprites):
         self.sprites = sprites
         self.screen = screen
-        self.criteria = ['pos', 'dir', 'sprite']
+        self.criteria = ['pos', 'sprite']
 
 
     def draw_individual(self, ent):
-        self.sprites[ent.sprite].draw(ent.pos[0], ent.pos[1], ent.dir, self.screen)
+        frame = 0
+        if 'dir' in ent:
+            frame = ent.dir
+        self.sprites[ent.sprite].draw(ent.pos[0], ent.pos[1], frame, self.screen)
 

@@ -1,8 +1,10 @@
 tank:
   sprite: tank
   movetype: fly
-  speed: .5
+  speed: 3
 
 building:
   sprite: building
+  commands:
+    q: make_tank
 

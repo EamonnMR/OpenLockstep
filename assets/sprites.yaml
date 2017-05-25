@@ -2,6 +2,8 @@ tank:
   x_frames: 8
   y_frames: 1
   file: "danc_cc_by/tank.png"
+building:
+  file: "danc_cc_by/building.png"
 scand_mouse:
   x_frames: 14
   y_frames: 1
