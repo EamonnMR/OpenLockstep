@@ -6,5 +6,5 @@ tank:
 building:
   sprite: building
   commands:
-    q: make_tank
+    q: [make, {type: tank}]
 

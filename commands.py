@@ -18,6 +18,9 @@ def deserialize(data):
 def serialize(command):
    return COMMAND_TO_INDEX[type(command).__name__] + command.serialize()
 
+def get_mapped(command_str):
+    return STR_COMMANDS[command_str]
+
 class Command:
     ''' Command: An instruction for units to be sent over the network
 
@@ -70,10 +73,23 @@ class Move(Command):
         self.ids = ids
         self.to = to
 
+class Make(Command):
+    net_members = ['ids', 'type']
+
+    def __init__(self, ids=[], type=''):
+        self.ids = ids
+        self.type = type
+
+
+STR_COMMANDS = {
+    'make': Make
+}
+
 INDEX_TO_COMMAND = {
     1: Ping,
     2: Handshake,
     3: Move,
+    4: Make,
 }
 
 COMMAND_TO_INDEX = dict((item[1].__name__, bytes([item[0]])) for item in INDEX_TO_COMMAND.items())

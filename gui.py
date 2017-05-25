@@ -10,6 +10,9 @@ class GUI:
         self.selected_units = []
         self.ecs = ecs
 
+    def get_units(self):
+        return [self.ecs[id] for id in self.selected_units]
+
     def handle_event(self, event):
         ''' Returns commands if any'''
         if event.type == pygame.MOUSEBUTTONUP:
@@ -23,6 +26,25 @@ class GUI:
                 return self.mouse.left_down()
             elif event.button == 3:
                 return self.mouse.right_down()
+        elif event.type == pygame.KEYDOWN:
+            # This is fine as an MVP but I think that determining the order
+            # set at selection-time might be saner.
+            hotkey = chr(event.key)
+            # TODO: Nice hotkey mapping
+            # for now: hardcoded hotkey mapping
+            order_group = []
+            for unit in self.get_units():
+                if hotkey in unit.commands:
+                    order_group.append(unit)
+            
+            # Hack from:
+            # https://stackoverflow.com/questions/3844801/check-if-all-elements-in-a-list-are-identical
+            # Pending proper command card support:
+            possible_orders = [unit.commands[hotkey] for unit in order_group]
+            order_set = set([cmd[0] for cmd in possible_orders])
+            if len(order_set) == 1:
+                order = possible_orders[0]
+                return commands.get_mapped(order[0])(ids=[unit.id for unit in order_group], **order[1])
         else:
             return None
 

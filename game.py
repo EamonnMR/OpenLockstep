@@ -102,6 +102,15 @@ class Game:
             if type(command) == commands.Move:
                 for id in command.ids:
                     self.entities[id].move_goal = command.to
+            elif type(command) == commands.Make:
+                for id in command.ids:
+                    spawner = self.entities[id]
+                    self.entities.add_ent(
+                            self.data.spawn(utype=command.type,
+                            pos=[spawner.pos[0], spawner.pos[1] + 10],
+                            dir=0
+                            )
+                    )
 
     def clear_buffer(self):
         self.screen.fill((0,0,0))
