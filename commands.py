@@ -80,9 +80,16 @@ class Make(Command):
         self.ids = ids
         self.type = type
 
+class Stop(Command):
+    net_members = ['ids']
+
+    def __init__(self, ids=[]):
+        self.ids = ids
 
 STR_COMMANDS = {
-    'make': Make
+    'make': Make,
+    'move': Move,
+    'stop': Stop,
 }
 
 INDEX_TO_COMMAND = {
@@ -90,6 +97,7 @@ INDEX_TO_COMMAND = {
     2: Handshake,
     3: Move,
     4: Make,
+    5: Stop
 }
 
 COMMAND_TO_INDEX = dict((item[1].__name__, bytes([item[0]])) for item in INDEX_TO_COMMAND.items())

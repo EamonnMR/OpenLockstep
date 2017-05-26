@@ -37,6 +37,7 @@ class DataLoader:
         ''' This loads textual data, but does not load images.'''
         self.data['sprites'] = self._get_cfg('sprites.yaml')
         self.data['units'] = self._get_cfg('units.yaml')
+        self.data['orders'] = self._get_cfg('orders.yaml')
     def load(self):
         ''' Loads images  '''
         for name, data in self.data['sprites'].items():

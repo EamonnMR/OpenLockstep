@@ -4,11 +4,31 @@ import ecs
 import commands
 
 class GUI:
-    def __init__(self, ecs, mouse_spr, screen):
+    def __init__(self, ecs, mouse_spr, screen, data):
         self.mouse = NormalMouse(mouse_spr, self)
         self.screen = screen
         self.selected_units = []
         self.ecs = ecs
+        self.buttons = []
+        self.active_hotkeys = {}
+        self.data = data
+
+    def update_selection(self, new_selection):
+        self.selected_units = new_selection
+
+        if len(self.selected_units):
+        
+            orders = [self.data['orders'][order] for order in 
+                    set.intersection(
+                        *[set(unit.orders) for unit in self.get_units()]
+                    )
+            ]
+
+            self.active_hotkeys = {order['key']: order for order in orders}
+
+            # TODO: Also populate buttons
+        else:
+            active_hotkeys = {}
 
     def get_units(self):
         return [self.ecs[id] for id in self.selected_units]
@@ -30,23 +50,15 @@ class GUI:
             # This is fine as an MVP but I think that determining the order
             # set at selection-time might be saner.
             hotkey = chr(event.key)
-            # TODO: Nice hotkey mapping
-            # for now: hardcoded hotkey mapping
-            order_group = []
-            for unit in self.get_units():
-                if hotkey in unit.commands:
-                    order_group.append(unit)
-            
-            # Hack from:
-            # https://stackoverflow.com/questions/3844801/check-if-all-elements-in-a-list-are-identical
-            # Pending proper command card support:
-            possible_orders = [unit.commands[hotkey] for unit in order_group]
-            order_set = set([cmd[0] for cmd in possible_orders])
-            if len(order_set) == 1:
-                order = possible_orders[0]
-                return commands.get_mapped(order[0])(ids=[unit.id for unit in order_group], **order[1])
-        else:
-            return None
+            if hotkey in self.active_hotkeys:
+                order = self.active_hotkeys[hotkey]
+                print(self.active_hotkeys)
+                return commands.get_mapped(order['cmd'])(
+                        ids=self.selected_units, **(order['args'] if 'args' in order else {})
+                )
+            else:
+                return None
+    
 
     def draw(self):
         # TODO: Draw gui stuff here
@@ -100,9 +112,10 @@ class NormalMouse(MouseMode):
     
     def left_up(self):
         self.dragging = False
-        self.parent.selected_units = \
+        self.parent.update_selection(
                 self.parent.ecs.filter('RectFilter',
                         rect=self.selection_box)
+        )
         self.selection_box = None
 
     def left_down(self):

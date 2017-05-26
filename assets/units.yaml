@@ -2,9 +2,11 @@ tank:
   sprite: tank
   movetype: fly
   speed: 3
+  orders:
+    - move
+      stop
 
 building:
   sprite: building
-  commands:
-    q: [make, {type: tank}]
-
+  orders:
+    - make_tank

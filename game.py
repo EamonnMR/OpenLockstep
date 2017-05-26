@@ -53,7 +53,8 @@ class Game:
         # For now we hard code how the GUI will look.
         self.gui = gui.GUI(self.entities,
                 self.data.sprites['scand_mouse'],
-                self.screen)
+                self.screen,
+                self.data.data)
 
         self.entities.add_draw_system(
                 gui.SelectionDrawSystem(screen=self.screen, gui=self.gui,
