@@ -4,7 +4,7 @@ tank:
   speed: 3
   orders:
     - move
-      stop
+    - stop
 
 building:
   sprite: building
