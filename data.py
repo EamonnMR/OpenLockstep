@@ -28,17 +28,18 @@ class DataLoader:
         elif name.endswith('.yml') or name.endswith('.yaml'):
             return yaml.load(text)
         else:
-            raise UnknownFileTypeException
+            print('unknown file type: ' + name)
+            #raise UnknownFileTypeException
 
 
     def _fname(self, fname):
         return os.path.join(self.root_dir, fname)
     def preload(self):
         ''' This loads textual data, but does not load images.'''
-        self.data['sprites'] = self._get_cfg('sprites.yaml')
-        self.data['units'] = self._get_cfg('units.yaml')
-        self.data['orders'] = self._get_cfg('orders.yaml')
-        self.data['factions'] = self._get_cfg('factions.yaml')
+        for file_name in os.listdir(self.root_dir):
+               
+            if os.path.isfile(os.path.join(self.root_dir, file_name)):
+                self.data[file_name.split('.')[0]] = self._get_cfg(file_name)
     def load(self):
         ''' Loads images  '''
         for name, data in self.data['sprites'].items():
