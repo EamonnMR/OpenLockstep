@@ -6,7 +6,7 @@ tank:
     - move
     - stop
 
-building:
+tan_factory:
   sprite: building
   orders:
     - make_tank

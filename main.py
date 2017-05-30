@@ -41,7 +41,7 @@ if __name__ == "__main__":
     if args.client:
         game.Game(settings, args, ent_manager).start()
     elif args.server:
-        net.Server(args.port, host=args.host,
+        net.Server(settings, args.port, host=args.host,
                 client_count=args.clients,
                 ent_manager=ent_manager).run()
 

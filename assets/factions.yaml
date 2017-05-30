@@ -1,0 +1,6 @@
+tan_faction:
+  start_building: tan_factory
+
+purple_faction:
+  start_building: purple_factory
+

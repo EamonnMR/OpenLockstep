@@ -136,8 +136,8 @@ class Messenger:
             return None
 
 class Server:
-    def __init__(self, port, listen=5, host=None, client_count=1,
-            ent_manager=None):
+    def __init__(self, settings, port, listen=5, host=None,
+            client_count=1, ent_manager=None, ):
         self.socket = get_socket()
         self.listen = listen
         self.socket.bind((socket.gethostname() if not host else host, port))
@@ -145,6 +145,7 @@ class Server:
         self.client_cons = {}
         self.steps = {}
         self.ents = ent_manager
+        self.settings = settings
 
     def run(self):
         self.socket.listen(self.listen)
@@ -156,15 +157,21 @@ class Server:
             con_id = len(self.client_cons)
             client_con = Messenger(clientsock)
             self.client_cons[con_id] = client_con
+            print('Connected: ' + str(address) + ' id: ' + str(con_id))
+        print("All " + str(self.client_count) + " clients connected. Sending Handshakes")  
+        
+        # TODO: Some nice way of handling this
+        start_locations = {con_id: {'fac': 'tan_faction', 'start': [100,100]} for con_id in self.client_cons}
+        for con_id, client_con in self.client_cons.items():
             client_con.push_step(
                     Step(0, [
-                        commands.Handshake([100,100], con_id)], 
+                        commands.Handshake(con_id, start_locations)], 
                     EMPTY_HASH)
             )
-            print('Connected: ' + str(address) + ' id: ' + str(con_id))
-        print("All " + str(self.client_count) + " clients connected. starting")  
+
         # Tuple here tracks the actual step (which we build in this call)
         # and a hash that decides if every client has checked in to the server
+        print("Starting game")
         while True:
             for con_id, con in self.client_cons.items():
                 step = con.pull_step()

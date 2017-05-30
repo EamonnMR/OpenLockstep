@@ -38,6 +38,7 @@ class DataLoader:
         self.data['sprites'] = self._get_cfg('sprites.yaml')
         self.data['units'] = self._get_cfg('units.yaml')
         self.data['orders'] = self._get_cfg('orders.yaml')
+        self.data['factions'] = self._get_cfg('factions.yaml')
     def load(self):
         ''' Loads images  '''
         for name, data in self.data['sprites'].items():
@@ -85,5 +86,7 @@ class DataLoader:
     def spawn(self, utype, **kwargs):
         mutable = copy.deepcopy(self.data['units'][utype])
         mutable.update(kwargs)
+
+        print(mutable)
 
         return Entity(mutable)
