@@ -5,6 +5,12 @@ make_tank:
   key: q
   sprite: button_tank
 
+make_sidecar:
+  cmd: make
+  args:
+    type: sidecar
+  key: q
+  sprite: button_sidecar
 move:
   cmd: move
   key: m

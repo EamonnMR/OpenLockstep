@@ -161,7 +161,7 @@ class Server:
         print("All " + str(self.client_count) + " clients connected. Sending Handshakes")  
         
         # TODO: Some nice way of handling this
-        start_locations = {con_id: {'fac': 'tan_faction', 'start': [100,100]} for con_id in self.client_cons}
+        start_locations = {con_id: {'fac': 'purple_faction', 'start': [100,100]} for con_id in self.client_cons}
         for con_id, client_con in self.client_cons.items():
             client_con.push_step(
                     Step(0, [

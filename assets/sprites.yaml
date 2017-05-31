@@ -2,8 +2,15 @@ tank:
   x_frames: 8
   y_frames: 1
   file: "danc_cc_by/tank.png"
+sidecar:
+  x_frames: 8
+  y_frames: 1
+  file: "danc_cc_by/sidecar.png"
 building:
   file: "danc_cc_by/building.png"
+factory:
+  file: "danc_cc_by/factory.png"
+  x_frames: 15
 scand_mouse:
   x_frames: 14
   y_frames: 1
