@@ -2,6 +2,7 @@ import socket
 import argparse
 import threading
 import queue # Use Async io Queue?
+import math
 
 import commands
 
@@ -160,8 +161,10 @@ class Server:
             print('Connected: ' + str(address) + ' id: ' + str(con_id))
         print("All " + str(self.client_count) + " clients connected. Sending Handshakes")  
         
-        # TODO: Some nice way of handling this
-        start_locations = {con_id: {'fac': 'purple_faction', 'start': [100,100]} for con_id in self.client_cons}
+        # Fun hack: always set up the players on opposing sides
+        
+        start_locations = self._get_start_locations()
+
         for con_id, client_con in self.client_cons.items():
             client_con.push_step(
                     Step(0, [
@@ -203,6 +206,32 @@ class Server:
                         del self.steps[step.uid]
 
                         # TODO: Put it on a queue to write to disc, etc.
+    def _get_start_locations(self):
+        center = [self.settings['screen_size'][0] / 2, self.settings['screen_size'][1] / 2]
+
+        angle = (math.pi * 2) / len(self.client_cons)
+        radius = 200
+        
+        current_angle = 0
+
+        faction = {True: 'tan_faction', False: 'purple_faction'}
+        faction_toggle = True
+
+        start_locations = {}
+
+        for con_id in self.client_cons:
+            start_locations[con_id] = {
+                    'fac': faction[faction_toggle],
+                    'start': [
+                        (math.cos(current_angle) * radius) + center[0],
+                        (math.sin(current_angle) * radius) + center[1]
+                    ]
+            }
+
+            faction_toggle = not faction_toggle
+            current_angle = current_angle + angle
+        return start_locations
+
 
 
 class Client():
