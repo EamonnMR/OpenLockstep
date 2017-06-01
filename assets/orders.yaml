@@ -1,0 +1,22 @@
+make_tank:
+  cmd: make
+  args:
+    type: tank
+  key: q
+  sprite: button_tank
+
+make_sidecar:
+  cmd: make
+  args:
+    type: sidecar
+  key: q
+  sprite: button_sidecar
+move:
+  cmd: move
+  key: m
+  sprite: button_move
+
+stop:
+  cmd: stop
+  key: s
+  sprite: button_stop

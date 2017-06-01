@@ -2,6 +2,7 @@ import socket
 import argparse
 import threading
 import queue # Use Async io Queue?
+import math
 
 import commands
 
@@ -136,8 +137,8 @@ class Messenger:
             return None
 
 class Server:
-    def __init__(self, port, listen=5, host=None, client_count=1,
-            ent_manager=None):
+    def __init__(self, settings, port, listen=5, host=None,
+            client_count=1, ent_manager=None, ):
         self.socket = get_socket()
         self.listen = listen
         self.socket.bind((socket.gethostname() if not host else host, port))
@@ -145,6 +146,7 @@ class Server:
         self.client_cons = {}
         self.steps = {}
         self.ents = ent_manager
+        self.settings = settings
 
     def run(self):
         self.socket.listen(self.listen)
@@ -156,15 +158,23 @@ class Server:
             con_id = len(self.client_cons)
             client_con = Messenger(clientsock)
             self.client_cons[con_id] = client_con
+            print('Connected: ' + str(address) + ' id: ' + str(con_id))
+        print("All " + str(self.client_count) + " clients connected. Sending Handshakes")  
+        
+        # Fun hack: always set up the players on opposing sides
+        
+        start_locations = self._get_start_locations()
+
+        for con_id, client_con in self.client_cons.items():
             client_con.push_step(
                     Step(0, [
-                        commands.Handshake([100,100], con_id)], 
+                        commands.Handshake(con_id, start_locations)], 
                     EMPTY_HASH)
             )
-            print('Connected: ' + str(address) + ' id: ' + str(con_id))
-        print("All " + str(self.client_count) + " clients connected. starting")  
+
         # Tuple here tracks the actual step (which we build in this call)
         # and a hash that decides if every client has checked in to the server
+        print("Starting game")
         while True:
             for con_id, con in self.client_cons.items():
                 step = con.pull_step()
@@ -196,6 +206,32 @@ class Server:
                         del self.steps[step.uid]
 
                         # TODO: Put it on a queue to write to disc, etc.
+    def _get_start_locations(self):
+        center = [self.settings['screen_size'][0] / 2, self.settings['screen_size'][1] / 2]
+
+        angle = (math.pi * 2) / len(self.client_cons)
+        radius = 200
+        
+        current_angle = 0
+
+        faction = {True: 'tan_faction', False: 'purple_faction'}
+        faction_toggle = True
+
+        start_locations = {}
+
+        for con_id in self.client_cons:
+            start_locations[con_id] = {
+                    'fac': faction[faction_toggle],
+                    'start': [
+                        (math.cos(current_angle) * radius) + center[0],
+                        (math.sin(current_angle) * radius) + center[1]
+                    ]
+            }
+
+            faction_toggle = not faction_toggle
+            current_angle = current_angle + angle
+        return start_locations
+
 
 
 class Client():

@@ -1,0 +1,26 @@
+tank:
+  sprite: tank
+  movetype: fly
+  speed: 3
+  orders:
+    - move
+    - stop
+
+sidecar:
+  sprite: sidecar
+  movetype: fly
+  speed: 3
+  orders:
+    - move
+    - stop
+
+tan_factory:
+  sprite: building
+  orders:
+    - make_tank
+
+purple_factory:
+  sprite: factory
+  orders:
+    - make_sidecar
+

@@ -141,7 +141,7 @@ class DrawSystem:
         ''' This is called with a list of all of the ents. If the system
         needs filtering beyond checking criteria, override this method.'''
         self.draw_all([ent for ent in unfiltered_list.values()
-            if all([True for comp in self.criteria if comp in ent])]) 
+                if all([comp in ent for comp in self.criteria])])
 
     def draw_all(self, ents):
         ''' This is called on all ents that meet criteria. Use this to

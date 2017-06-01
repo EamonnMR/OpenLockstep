@@ -4,11 +4,34 @@ import ecs
 import commands
 
 class GUI:
-    def __init__(self, ecs, mouse_spr, screen):
+    def __init__(self, ecs, mouse_spr, screen, data):
         self.mouse = NormalMouse(mouse_spr, self)
         self.screen = screen
         self.selected_units = []
         self.ecs = ecs
+        self.buttons = []
+        self.active_hotkeys = {}
+        self.data = data
+
+    def update_selection(self, new_selection):
+        self.selected_units = new_selection
+
+        if len(self.selected_units):
+        
+            orders = [self.data['orders'][order] for order in 
+                    set.intersection(
+                        *[set(unit.orders) for unit in self.get_units()]
+                    )
+            ]
+
+            self.active_hotkeys = {order['key']: order for order in orders}
+
+            # TODO: Also populate buttons
+        else:
+            active_hotkeys = {}
+
+    def get_units(self):
+        return [self.ecs[id] for id in self.selected_units]
 
     def handle_event(self, event):
         ''' Returns commands if any'''
@@ -23,8 +46,19 @@ class GUI:
                 return self.mouse.left_down()
             elif event.button == 3:
                 return self.mouse.right_down()
-        else:
-            return None
+        elif event.type == pygame.KEYDOWN:
+            # This is fine as an MVP but I think that determining the order
+            # set at selection-time might be saner.
+            hotkey = chr(event.key)
+            if hotkey in self.active_hotkeys:
+                order = self.active_hotkeys[hotkey]
+                print(self.active_hotkeys)
+                return commands.get_mapped(order['cmd'])(
+                        ids=self.selected_units, **(order['args'] if 'args' in order else {})
+                )
+            else:
+                return None
+    
 
     def draw(self):
         # TODO: Draw gui stuff here
@@ -78,9 +112,10 @@ class NormalMouse(MouseMode):
     
     def left_up(self):
         self.dragging = False
-        self.parent.selected_units = \
+        self.parent.update_selection(
                 self.parent.ecs.filter('RectFilter',
                         rect=self.selection_box)
+        )
         self.selection_box = None
 
     def left_down(self):
@@ -90,7 +125,10 @@ class NormalMouse(MouseMode):
 
     def right_down(self):
         if self.parent.selected_units:
-            return commands.Move(ids=self.parent.selected_units,
+            units = [self.parent.ecs[id] for id in self.parent.selected_units]
+            # TODO: Filter-chaining should fix this
+            # TODO: Implement 'unit_set' type - iterable but also features a 'filter' option?
+            return commands.Move(ids=[unit.id for unit in units if 'movetype' in unit],
                     to=pygame.mouse.get_pos())
 
     def _update_selection_box(self):

@@ -39,10 +39,12 @@ class Game:
         hs_step = self.client.block_until_get_step(net.HANDSHAKE_STEP)
         for command in hs_step.commands:
             if type(command) == commands.Handshake:
-                self.entities.add_ent(Entity({'pos': command.start_building,
-                    'dir': 0}))
+                for player_id, info in command.startlocs.items():
+                    start_building = self.data.data['factions'][info['fac']]['start_building']
+                    self.entities.add_ent(self.data.spawn(
+                        utype=start_building, pos=info['start']))
 
-                self.player_id = command.your_id
+            self.player_id = command.your_id
         
         print("Handshake complete. Your player ID: {}".format(self.player_id))
 
@@ -53,7 +55,8 @@ class Game:
         # For now we hard code how the GUI will look.
         self.gui = gui.GUI(self.entities,
                 self.data.sprites['scand_mouse'],
-                self.screen)
+                self.screen,
+                self.data.data)
 
         self.entities.add_draw_system(
                 gui.SelectionDrawSystem(screen=self.screen, gui=self.gui,
@@ -102,6 +105,15 @@ class Game:
             if type(command) == commands.Move:
                 for id in command.ids:
                     self.entities[id].move_goal = command.to
+            elif type(command) == commands.Make:
+                for id in command.ids:
+                    spawner = self.entities[id]
+                    self.entities.add_ent(
+                            self.data.spawn(utype=command.type,
+                            pos=[spawner.pos[0], spawner.pos[1] + 10],
+                            dir=0
+                            )
+                    )
 
     def clear_buffer(self):
         self.screen.fill((0,0,0))

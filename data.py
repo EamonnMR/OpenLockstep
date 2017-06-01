@@ -1,11 +1,12 @@
 import json
 import os
+import copy
 
 import pygame
 import yaml
 
 from graphics import Sprite
-
+from ecs import Entity
 
 class DataLoader:
     def __init__(self, directory):
@@ -27,14 +28,18 @@ class DataLoader:
         elif name.endswith('.yml') or name.endswith('.yaml'):
             return yaml.load(text)
         else:
-            raise UnknownFileTypeException
+            print('unknown file type: ' + name)
+            #raise UnknownFileTypeException
 
 
     def _fname(self, fname):
         return os.path.join(self.root_dir, fname)
     def preload(self):
         ''' This loads textual data, but does not load images.'''
-        self.data['sprites'] = self._get_cfg('sprites.yaml')
+        for file_name in os.listdir(self.root_dir):
+               
+            if os.path.isfile(os.path.join(self.root_dir, file_name)):
+                self.data[file_name.split('.')[0]] = self._get_cfg(file_name)
     def load(self):
         ''' Loads images  '''
         for name, data in self.data['sprites'].items():
@@ -79,3 +84,12 @@ class DataLoader:
         return Sprite(image, x_frames, y_frames,
                 width, height, x_offset, y_offset)
 
+    def spawn(self, utype, **kwargs):
+        mutable = copy.deepcopy({k: v for k, v in
+            self.data['units'][utype].items()
+            if not k.startswith('_')}) # Leading underscore = metadata
+        mutable.update(kwargs)
+
+        print(mutable)
+
+        return Entity(mutable)
