@@ -85,7 +85,9 @@ class DataLoader:
                 width, height, x_offset, y_offset)
 
     def spawn(self, utype, **kwargs):
-        mutable = copy.deepcopy(self.data['units'][utype])
+        mutable = copy.deepcopy({k: v for k, v in
+            self.data['units'][utype].items()
+            if not k.startswith('_')}) # Leading underscore = metadata
         mutable.update(kwargs)
 
         print(mutable)
