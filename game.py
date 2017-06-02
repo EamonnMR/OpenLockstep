@@ -39,10 +39,15 @@ class Game:
         hs_step = self.client.block_until_get_step(net.HANDSHAKE_STEP)
         for command in hs_step.commands:
             if type(command) == commands.Handshake:
+                # Create players with entity IDs corresponding to their player IDs
+                for player_id in sorted(command.startlocs):
+                    self.entities.add_ent(Entity({'player_id': int(player_id),
+                        'faction': command.startlocs[player_id]['fac']}))
+                # Now that we have player ents with the right IDs, spawn other stuff
                 for player_id, info in command.startlocs.items():
                     start_building = self.data.data['factions'][info['fac']]['start_building']
                     self.entities.add_ent(self.data.spawn(
-                        utype=start_building, pos=info['start']))
+                        utype=start_building, pos=info['start'], owner=int(player_id)))
 
             self.player_id = command.your_id
         
@@ -56,7 +61,8 @@ class Game:
         self.gui = gui.GUI(self.entities,
                 self.data.sprites['scand_mouse'],
                 self.screen,
-                self.data.data)
+                self.data.data,
+                self.player_id)
 
         self.entities.add_draw_system(
                 gui.SelectionDrawSystem(screen=self.screen, gui=self.gui,
@@ -111,7 +117,8 @@ class Game:
                     self.entities.add_ent(
                             self.data.spawn(utype=command.type,
                             pos=[spawner.pos[0], spawner.pos[1] + 10],
-                            dir=0
+                            dir=0,
+                            owner=spawner.owner,
                             )
                     )
 

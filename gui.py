@@ -4,7 +4,7 @@ import ecs
 import commands
 
 class GUI:
-    def __init__(self, ecs, mouse_spr, screen, data):
+    def __init__(self, ecs, mouse_spr, screen, data, player_id):
         self.mouse = NormalMouse(mouse_spr, self)
         self.screen = screen
         self.selected_units = []
@@ -12,6 +12,7 @@ class GUI:
         self.buttons = []
         self.active_hotkeys = {}
         self.data = data
+        self.player_id = player_id
 
     def update_selection(self, new_selection):
         self.selected_units = new_selection
@@ -112,10 +113,21 @@ class NormalMouse(MouseMode):
     
     def left_up(self):
         self.dragging = False
-        self.parent.update_selection(
-                self.parent.ecs.filter('RectFilter',
-                        rect=self.selection_box)
-        )
+        # Logic to determine what ends up being selected
+        
+        units_in_rect_ids = self.parent.ecs.filter('RectFilter', rect=self.selection_box)
+        
+        units_in_rect = [self.parent.ecs[id] for id in units_in_rect_ids]
+        if len(units_in_rect) == 1 or all(
+                ['owner' in unit and unit.owner == self.parent.player_id 
+                for unit in units_in_rect]):
+            # User has selected exactly one unit or only units they own
+            self.parent.update_selection(units_in_rect_ids)
+        else:
+            self.parent.update_selection([
+                unit.id for unit in units_in_rect
+                if 'owner' in unit and unit.owner == self.parent.player_id
+                ])
         self.selection_box = None
 
     def left_down(self):
@@ -156,7 +168,7 @@ class RectFilter(ecs.Filter):
     def apply_individual(self, ent, criteria):
         ''' criteria: {'rect': pygame.Rect}
         Checks to see if the entity is within the selected rect.'''
-        # TODO: Quadtre or some such
+        # TODO: Quadtree, or some such
         if 'pos' in ent and criteria['rect'].collidepoint(ent.pos):
             return ent
 
