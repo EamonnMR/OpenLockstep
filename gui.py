@@ -141,7 +141,7 @@ class NormalMouse(MouseMode):
             # TODO: Filter-chaining should fix this
             # TODO: Implement 'unit_set' type - iterable but also features a 'filter' option?
             return commands.Move(ids=[unit.id for unit in units 
-                'orders' in unit and 'move' in unit.orders],
+                if 'orders' in unit and 'move' in unit.orders],
                     to=pygame.mouse.get_pos())
 
     def _update_selection_box(self):
@@ -184,4 +184,7 @@ class SelectionDrawSystem(ecs.DrawSystem):
         for ent in ents:
             if ent.id in self.gui.selected_units:
                 self.sprite.draw(x=ent.pos[0], y=ent.pos[1],
-                        frame=0, screen=self.gui.screen)
+                        frame=0 if ent.owner and
+                            ent.owner == self.gui.player_id 
+                            else 1,
+                        screen=self.gui.screen)

@@ -18,5 +18,5 @@ move:
 
 stop:
   cmd: stop
-  key: s
+  key: t 
   sprite: button_stop
