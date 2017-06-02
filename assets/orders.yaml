@@ -11,10 +11,12 @@ make_sidecar:
     type: sidecar
   key: q
   sprite: button_sidecar
+
 move:
   cmd: move
   key: m
   sprite: button_move
+  selector: crosshairs
 
 stop:
   cmd: stop

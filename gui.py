@@ -5,6 +5,7 @@ import commands
 
 class GUI:
     def __init__(self, ecs, mouse_spr, screen, data, player_id):
+        self.mouse_spr = mouse_spr
         self.mouse = NormalMouse(mouse_spr, self)
         self.screen = screen
         self.selected_units = []
@@ -54,10 +55,13 @@ class GUI:
             hotkey = chr(event.key)
             if hotkey in self.active_hotkeys:
                 order = self.active_hotkeys[hotkey]
-                print(self.active_hotkeys)
-                return commands.get_mapped(order['cmd'])(
-                        ids=self.selected_units, **(order['args'] if 'args' in order else {})
-                )
+                if "selector" in order and order['selector'] == 'crosshairs':
+                    self.mouse = CrosshairsMouse(self.mouse_spr, self, order)
+                else:
+                    return commands.get_mapped(order['cmd'])(
+                            ids=self.selected_units,
+                            **(order['args'] if 'args' in order else {})
+                    )
             else:
                 return None
     
@@ -88,6 +92,25 @@ class MouseMode:
     def left_down(self):
         pass
 
+class CrosshairsMouse(MouseMode):
+    def __init__(self, sprite, parent, order):
+        pygame.mouse.set_visible(False)
+        self.parent = parent
+        self.sprite = sprite
+        self.order = order
+    
+    def draw(self):
+        x, y = pygame.mouse.get_pos()
+        self.sprite.draw(x, y, 13, self.parent.screen)
+
+    def left_down(self):
+        self.parent.mouse = NormalMouse(self.parent.mouse_spr, self.parent)
+        return commands.get_mapped(self.order['cmd'])(
+            ids=self.parent.selected_units, to=pygame.mouse.get_pos(),
+            **(self.order['args'] if 'args' in self.order else {})
+        )
+
+
 class NormalMouse(MouseMode):
     def __init__(self, sprite, parent):
         pygame.mouse.set_visible(False)
@@ -113,23 +136,24 @@ class NormalMouse(MouseMode):
                 self.parent.screen)
     
     def left_up(self):
-        self.dragging = False
-        # Logic to determine what ends up being selected
-        
-        units_in_rect_ids = self.parent.ecs.filter('RectFilter', rect=self.selection_box)
-        
-        units_in_rect = [self.parent.ecs[id] for id in units_in_rect_ids]
-        if len(units_in_rect) == 1 or all(
-                ['owner' in unit and unit.owner == self.parent.player_id 
-                for unit in units_in_rect]):
-            # User has selected exactly one unit or only units they own
-            self.parent.update_selection(units_in_rect_ids)
-        else:
-            self.parent.update_selection([
-                unit.id for unit in units_in_rect
-                if 'owner' in unit and unit.owner == self.parent.player_id
-                ])
-        self.selection_box = None
+        if self.dragging:
+            self.dragging = False
+            # Logic to determine what ends up being selected
+            
+            units_in_rect_ids = self.parent.ecs.filter('RectFilter', rect=self.selection_box)
+            
+            units_in_rect = [self.parent.ecs[id] for id in units_in_rect_ids]
+            if len(units_in_rect) == 1 or all(
+                    ['owner' in unit and unit.owner == self.parent.player_id 
+                    for unit in units_in_rect]):
+                # User has selected exactly one unit or only units they own
+                self.parent.update_selection(units_in_rect_ids)
+            else:
+                self.parent.update_selection([
+                    unit.id for unit in units_in_rect
+                    if 'owner' in unit and unit.owner == self.parent.player_id
+                    ])
+            self.selection_box = None
 
     def left_down(self):
         self.dragging = True
