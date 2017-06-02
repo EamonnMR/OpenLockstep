@@ -16,8 +16,9 @@ class GUI:
 
     def update_selection(self, new_selection):
         self.selected_units = new_selection
-
-        if len(self.selected_units):
+        units = self.get_units()
+        if len(self.selected_units) and all(
+                [unit.owner == self.player_id for unit in units]):
         
             orders = [self.data['orders'][order] for order in 
                     set.intersection(
@@ -29,7 +30,7 @@ class GUI:
 
             # TODO: Also populate buttons
         else:
-            active_hotkeys = {}
+            self.active_hotkeys = {}
 
     def get_units(self):
         return [self.ecs[id] for id in self.selected_units]
@@ -137,11 +138,12 @@ class NormalMouse(MouseMode):
 
     def right_down(self):
         if self.parent.selected_units:
-            units = [self.parent.ecs[id] for id in self.parent.selected_units]
+            units = [unit for unit in self.parent.get_units()
+                    if unit.owner == self.parent.player_id]
             # TODO: Filter-chaining should fix this
             # TODO: Implement 'unit_set' type - iterable but also features a 'filter' option?
-            return commands.Move(ids=[unit.id for unit in units 
-                if 'orders' in unit and 'move' in unit.orders],
+            return commands.Move(ids=[
+                unit.id for unit in units if 'orders' in unit and 'move' in unit.orders],
                     to=pygame.mouse.get_pos())
 
     def _update_selection_box(self):
