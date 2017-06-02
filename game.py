@@ -44,7 +44,8 @@ class Game:
                     self.entities.add_ent(Entity({'player_id': int(player_id),
                         'faction': command.startlocs[player_id]['fac']}))
                 # Now that we have player ents with the right IDs, spawn other stuff
-                for player_id, info in command.startlocs.items():
+                for player_id in sorted(command.startlocs):
+                    info = command.startlocs[player_id]
                     start_building = self.data.data['factions'][info['fac']]['start_building']
                     self.entities.add_ent(self.data.spawn(
                         utype=start_building, pos=info['start'], owner=int(player_id)))
