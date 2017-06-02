@@ -140,7 +140,8 @@ class NormalMouse(MouseMode):
             units = [self.parent.ecs[id] for id in self.parent.selected_units]
             # TODO: Filter-chaining should fix this
             # TODO: Implement 'unit_set' type - iterable but also features a 'filter' option?
-            return commands.Move(ids=[unit.id for unit in units if 'movetype' in unit],
+            return commands.Move(ids=[unit.id for unit in units 
+                'orders' in unit and 'move' in unit.orders],
                     to=pygame.mouse.get_pos())
 
     def _update_selection_box(self):
