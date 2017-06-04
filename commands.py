@@ -33,9 +33,16 @@ class Command:
     If you're going to use the default deserialize command, you need to
     ensure that your constructor works when called with no arguments - just
     make all of the arguments optional.
+
+    Execute defines how the game state is affected by the Command. Be careful
+    when using anything else to influence the gamestate (for example, see how
+    Handshake is used)
     '''
 
     net_members = []
+    
+    def execute(self, ecs, data):
+        pass
 
     def serialize(self):
         cls = type(self)
@@ -74,6 +81,10 @@ class Move(Command):
         self.ids = ids
         self.to = to
 
+    def execute(self, ecs, data):
+        for id in self.ids:
+            ecs[id].move_goal = self.to
+
 class Make(Command):
     net_members = ['ids', 'type']
 
@@ -81,11 +92,32 @@ class Make(Command):
         self.ids = ids
         self.type = type
 
+    def execute(self, ecs, data):
+      for id in self.ids:
+          spawner = ecs[id]
+          ecs.add_ent(
+                  data.spawn(utype=self.type,
+                  # TODO: Reasonable start locations (how?)
+                  pos=[spawner.pos[0], spawner.pos[1] + 10],
+                  dir=0,
+                  owner=spawner.owner,
+              )
+          )
+
+
 class Stop(Command):
     net_members = ['ids']
 
     def __init__(self, ids=[]):
         self.ids = ids
+
+    def execute(self, ecs, data):
+        active_members = ['move_goal']
+        # TODO: Add behavior things to this list
+        for unit in [ecs[id] for id in self.ids]:
+            for member in active_members:
+                if member in unit:
+                    del unit[member]
 
 STR_COMMANDS = {
     'make': Make,
