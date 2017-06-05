@@ -22,3 +22,8 @@ stop:
   cmd: stop
   key: t 
   sprite: button_stop
+
+attack:
+  cmd: attackmove
+  cmd_with_target: attack
+  key: a

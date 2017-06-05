@@ -104,11 +104,23 @@ class CrosshairsMouse(MouseMode):
         self.sprite.draw(x, y, 13, self.parent.screen)
 
     def left_down(self):
+        # Self-destruct
         self.parent.mouse = NormalMouse(self.parent.mouse_spr, self.parent)
-        return commands.get_mapped(self.order['cmd'])(
-            ids=self.parent.selected_units, to=pygame.mouse.get_pos(),
-            **(self.order['args'] if 'args' in self.order else {})
-        )
+
+        # Returns the appropriate command if any
+        return picked_location()
+    
+    def picked_location(self):
+        return self.construct_command(
+                self.order['cmd'], to=pygame.mouse.get_pos())
+
+    # def picked_unit(self):
+    
+    def construct_command(self, command_type, **kwargs):
+        return commands.get_mapped(command_type)(
+            ids=self.parent.selected_units,
+            **(self.order['args'] if 'args' in self.order else {}),
+            **kwargs)
 
 
 class NormalMouse(MouseMode):

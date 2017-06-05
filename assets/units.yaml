@@ -5,6 +5,8 @@ tank:
   orders:
     - move
     - stop
+    - attack
+    - attackmove
 
 sidecar:
   sprite: sidecar
@@ -13,6 +15,8 @@ sidecar:
   orders:
     - move
     - stop
+    - attack
+    - attackmove
 
 tan_factory:
   sprite: building
