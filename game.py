@@ -70,6 +70,11 @@ class Game:
                     sprite=self.data.sprites['scand_selection']),
                 0) # We want it at 0 so as to be below the sprites.
 
+        self.entities.add_filter(
+                gui.SpriteClickedFilter(self.data.sprites)
+                )
+        print(self.entities.filters)
+
     def start(self):
         self.command_list = []
         self.do_handshake()

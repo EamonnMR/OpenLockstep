@@ -1,3 +1,5 @@
+import math
+
 import pygame
 
 import ecs
@@ -55,8 +57,8 @@ class GUI:
             hotkey = chr(event.key)
             if hotkey in self.active_hotkeys:
                 order = self.active_hotkeys[hotkey]
-                if "selector" in order and order['selector'] == 'crosshairs':
-                    self.mouse = CrosshairsMouse(self.mouse_spr, self, order)
+                if "selector" in order:
+                    self.mouse = SELECTORS[order['selector']](self.mouse_spr, self, order)
                 else:
                     return commands.get_mapped(order['cmd'])(
                             ids=self.selected_units,
@@ -107,12 +109,28 @@ class CrosshairsMouse(MouseMode):
         # Self-destruct
         self.parent.mouse = NormalMouse(self.parent.mouse_spr, self.parent)
 
-        # Returns the appropriate command if any
-        return picked_location()
+        # See if we've clicked on a unit
+        location = pygame.mouse.get_pos()
+
+        clicked = self.parent.ecs.filter('SpriteClickedFilter',
+                point=location)
+        if len(clicked) == 1:
+            return self.picked_unit(clicked[0])
+        else:
+            # Returns the appropriate command if any
+            return self.picked_location(location)
     
-    def picked_location(self):
+    def picked_location(self, location):
         return self.construct_command(
-                self.order['cmd'], to=pygame.mouse.get_pos())
+                self.order['cmd'], to=location)
+
+    def picked_unit(self, unit):
+        command = self.order['cmd']
+        if 'cmd_with_target' in self.order:
+            comand = self.order['cmd_with_target']
+
+        return self.construct_command(command,
+                to=self.parent.ecs[unit].pos)
 
     # def picked_unit(self):
     
@@ -211,6 +229,26 @@ class RectFilter(ecs.Filter):
         if 'pos' in ent and criteria['rect'].collidepoint(ent.pos):
             return ent
 
+class SpriteClickedFilter(ecs.Filter):
+    def __init__(self, sprites):
+        self.sprites = sprites
+
+    def apply(self, ents, criteria):
+        # TODO: This is a bit of a hack, just doing a radius
+        x, y = criteria['point']
+        for ent in ents.values():
+            if 'pos' in ent and 'sprite' in ent:
+                radius = self.sprites[ent.sprite].width / 2
+
+                distance = math.sqrt(
+                    ((ent.pos[0] - x) ** 2) +
+                    ((ent.pos[1] - y) ** 2)
+                )
+
+                if distance < radius:
+                    return [ent.id]
+        return []
+
 
 class SelectionDrawSystem(ecs.DrawSystem):
     def __init__(self, screen, gui, sprite):
@@ -226,3 +264,7 @@ class SelectionDrawSystem(ecs.DrawSystem):
                             ent.owner == self.gui.player_id 
                             else 1,
                         screen=self.gui.screen)
+
+SELECTORS = {
+        'crosshairs': CrosshairsMouse
+}

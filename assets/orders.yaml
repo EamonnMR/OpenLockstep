@@ -22,8 +22,10 @@ stop:
   cmd: stop
   key: t 
   sprite: button_stop
+  selector: crosshairs
 
 attack:
   cmd: attackmove
   cmd_with_target: attack
   key: a
+  selector: crosshairs

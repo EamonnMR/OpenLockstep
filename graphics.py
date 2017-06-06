@@ -50,7 +50,6 @@ class SpriteDrawSystem(ecs.DrawSystem):
         self.screen = screen
         self.criteria = ['pos', 'sprite']
 
-
     def draw_individual(self, ent):
         frame = 0
         if 'dir' in ent:

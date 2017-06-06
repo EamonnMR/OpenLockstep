@@ -6,7 +6,6 @@ tank:
     - move
     - stop
     - attack
-    - attackmove
 
 sidecar:
   sprite: sidecar
@@ -16,7 +15,6 @@ sidecar:
     - move
     - stop
     - attack
-    - attackmove
 
 tan_factory:
   sprite: building

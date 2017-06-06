@@ -85,6 +85,12 @@ class Move(Command):
         for id in self.ids:
             ecs[id].move_goal = self.to
 
+class Attack(Move):
+    pass
+
+class AttackMove(Move):
+    pass
+
 class Make(Command):
     net_members = ['ids', 'type']
 
@@ -123,6 +129,8 @@ STR_COMMANDS = {
     'make': Make,
     'move': Move,
     'stop': Stop,
+    'attack': Attack,
+    'attackmove': AttackMove,
 }
 
 INDEX_TO_COMMAND = {
@@ -130,7 +138,9 @@ INDEX_TO_COMMAND = {
     2: Handshake,
     3: Move,
     4: Make,
-    5: Stop
+    5: Stop,
+    6: Attack,
+    7: AttackMove,
 }
 
 COMMAND_TO_INDEX = dict((item[1].__name__, bytes([item[0]])) for item in INDEX_TO_COMMAND.items())
