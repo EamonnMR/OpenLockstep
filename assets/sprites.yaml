@@ -21,3 +21,6 @@ scand_selection:
   x_frames: 3
   y_frames: 1
   file: "selection.png"
+shot_1:
+  file: "danc_cc_by/shot_1.png"
+  x_frames: 8

@@ -1,4 +1,6 @@
 tank:
+  unit: True
+  hp: 10
   sprite: tank
   movetype: fly
   speed: 3
@@ -6,8 +8,12 @@ tank:
     - move
     - stop
     - attack
+  weapon:
+    projectile: projectile_1
 
 sidecar:
+  unit: True
+  hp: 10
   sprite: sidecar
   movetype: fly
   speed: 3
@@ -15,13 +21,25 @@ sidecar:
     - move
     - stop
     - attack
+  weapon:
+    projectile: projectile_1
+
+projectile_1:
+  speed: 10
+  movetype: fly
+  projectile:
+    damage: 1
 
 tan_factory:
+  unit: True
+  hp: 20
   sprite: building
   orders:
     - make_tank
 
 purple_factory:
+  unit: True
+  hp: 20
   sprite: factory
   orders:
     - make_sidecar

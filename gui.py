@@ -221,12 +221,16 @@ class NormalMouse(MouseMode):
 
         self.selection_box = pygame.Rect(x, y, w, h)
 
+# TODO: Right now 'unit' is just what is selectable / targetable
+# This needs a saner setup, but that probably requires filter chaining / 
+# a major upgrade of how we handle filtering.
+
 class RectFilter(ecs.Filter):
     def apply_individual(self, ent, criteria):
         ''' criteria: {'rect': pygame.Rect}
         Checks to see if the entity is within the selected rect.'''
         # TODO: Quadtree, or some such
-        if 'pos' in ent and criteria['rect'].collidepoint(ent.pos):
+        if 'unit' in ent and 'pos' in ent and criteria['rect'].collidepoint(ent.pos):
             return ent
 
 class SpriteClickedFilter(ecs.Filter):
@@ -237,7 +241,7 @@ class SpriteClickedFilter(ecs.Filter):
         # TODO: This is a bit of a hack, just doing a radius
         x, y = criteria['point']
         for ent in ents.values():
-            if 'pos' in ent and 'sprite' in ent:
+            if 'pos' in ent and 'sprite' in ent and 'unit' in ent:
                 radius = self.sprites[ent.sprite].width / 2
 
                 distance = math.sqrt(
