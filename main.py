@@ -13,6 +13,7 @@ import game
 import gui
 import ecs
 import movement
+import combat
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Runs OpenLockstep')
@@ -31,12 +32,17 @@ if __name__ == "__main__":
     settings.update(yaml.load(args.settings))
     ent_manager = ecs.EntityManager(
         systems=[
-            movement.MoveSystem()
+            movement.MoveSystem(),
+            combat.HitPointSystem(),
+            combat.CooldownSystem(),
         ],
-            filters={
-                'RectFilter': gui.RectFilter(),
-            }
-        )
+        filters={
+            'RectFilter': gui.RectFilter(),
+        }
+    )
+    ent_manager.add_system(combat.AttackSystem(ent_manager),
+            index=1)
+    ent_manager.add_system(ecs.DeletionSystem(ent_manager))
 
     if args.client:
         game.Game(settings, args, ent_manager).start()

@@ -132,13 +132,19 @@ class CrosshairsMouse(MouseMode):
         return self.construct_command(command,
                 to=self.parent.ecs[unit].pos)
 
-    # def picked_unit(self):
-    
     def construct_command(self, command_type, **kwargs):
         return commands.get_mapped(command_type)(
             ids=self.parent.selected_units,
             **(self.order['args'] if 'args' in self.order else {}),
             **kwargs)
+
+class CrosshairsUnitPicker(CrosshairsMouse):
+    def picked_unit(self, unit):
+        command = self.order['cmd']
+        if 'cmd_with_target' in self.order:
+            command = self.order['cmd_with_target']
+
+        return self.construct_command(command, at=unit)
 
 
 class NormalMouse(MouseMode):
@@ -270,5 +276,6 @@ class SelectionDrawSystem(ecs.DrawSystem):
                         screen=self.gui.screen)
 
 SELECTORS = {
-        'crosshairs': CrosshairsMouse
+        'crosshairs': CrosshairsMouse,
+        'unitpicker': CrosshairsUnitPicker,
 }

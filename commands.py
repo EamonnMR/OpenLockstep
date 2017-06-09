@@ -83,13 +83,26 @@ class Move(Command):
 
     def execute(self, ecs, data):
         for id in self.ids:
+            clear_ai(ecs[id])
             ecs[id].move_goal = self.to
 
+
 class Attack(Move):
-    pass
+    net_members = ['ids', 'at']
+
+    def __init__(self, ids=[], at=None):
+        self.ids = ids
+        self.at = at
+
+    def execute(self, ecs, data):
+        for id in self.ids:
+            clear_ai(ecs[id])
+            ecs[id].attack_target = self.at
+
 
 class AttackMove(Move):
     pass
+
 
 class Make(Command):
     net_members = ['ids', 'type']
@@ -118,12 +131,15 @@ class Stop(Command):
         self.ids = ids
 
     def execute(self, ecs, data):
-        active_members = ['move_goal']
-        # TODO: Add behavior things to this list
         for unit in [ecs[id] for id in self.ids]:
-            for member in active_members:
-                if member in unit:
-                    del unit[member]
+            clear_ai(unit)
+
+def clear_ai(ent):
+    # TODO: Add behavior things to this list
+    active_members = ['move_goal', 'attack_target']
+    for member in active_members:
+        if member in ent:
+            del ent[member]
 
 STR_COMMANDS = {
     'make': Make,

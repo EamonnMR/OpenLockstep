@@ -9,6 +9,8 @@ tank:
     - stop
     - attack
   weapon:
+    cooldown: 1
+    damage: 1
     projectile: projectile_1
 
 sidecar:
@@ -22,6 +24,8 @@ sidecar:
     - stop
     - attack
   weapon:
+    cooldown: 1
+    damage: 1
     projectile: projectile_1
 
 projectile_1:

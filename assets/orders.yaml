@@ -28,4 +28,5 @@ attack:
   cmd: attackmove
   cmd_with_target: attack
   key: a
-  selector: crosshairs
+  selector: unitpicker
+

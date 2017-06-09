@@ -192,7 +192,7 @@ class Entity(dict):
 class DeletionSystem(System):
     def __init__(self, mgr):
         self.mgr = mgr
-        self.criteria = ['del', 'id']
+        self.criteria = ['delete', 'id']
 
     def do_step_all(self, ents):
         to_delete = []
@@ -201,5 +201,5 @@ class DeletionSystem(System):
             to_delete.append(ent.id)
 
         for id in to_delete:
-           del mgr.ents[id]
+           del self.mgr.ents[id]
 
