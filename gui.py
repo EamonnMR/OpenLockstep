@@ -105,9 +105,11 @@ class CrosshairsMouse(MouseMode):
         x, y = pygame.mouse.get_pos()
         self.sprite.draw(x, y, 13, self.parent.screen)
 
-    def left_down(self):
-        # Self-destruct
+    def set_normal_mouse(self):
         self.parent.mouse = NormalMouse(self.parent.mouse_spr, self.parent)
+
+    def left_down(self):
+        self.set_normal_mouse()
 
         # See if we've clicked on a unit
         location = pygame.mouse.get_pos()
@@ -119,6 +121,9 @@ class CrosshairsMouse(MouseMode):
         else:
             # Returns the appropriate command if any
             return self.picked_location(location)
+
+    def right_down(self):
+        self.set_normal_mouse()
     
     def picked_location(self, location):
         return self.construct_command(
