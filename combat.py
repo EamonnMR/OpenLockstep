@@ -1,4 +1,7 @@
+import math
+
 from ecs import System
+from graphics import angle_to_frame
 
 class AttackSystem(System):
     def __init__(self, ecs):
@@ -18,6 +21,13 @@ class AttackSystem(System):
 def do_attack(attacker, target):
     if 'hp' in target and 'weapon' in attacker and 'damage' in attacker.weapon:
         target.hp = target.hp - attacker.weapon['damage']
+        
+        if 'dir' in attacker and 'pos' in attacker and 'pos' in target:
+            attacker.dir = angle_to_frame(math.atan2(
+                target.pos[1] - attacker.pos[1],
+                target.pos[0] - attacker.pos[0])
+            )
+
 
 
 class HitPointSystem(System):
