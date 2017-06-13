@@ -65,6 +65,7 @@ class EntityManager:
         ent.id = id
         self.ents[id] = ent
         self.ent_count += 1
+        print(ent)
 
     def filter(self, filter_id, **kwargs):
         return self.filters[filter_id].apply(self.ents, kwargs)

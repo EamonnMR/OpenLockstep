@@ -4,21 +4,22 @@ from ecs import System
 from graphics import angle_to_frame
 
 class AttackSystem(System):
-    def __init__(self, ecs):
+    def __init__(self, ecs, data):
         self.criteria = ['pos', 'attack_target']
         self.ents = ecs # This system may operate on any targeted ent
+        self.data = data
     
     def do_step_individual(self, ent):
         if ent.attack_target in self.ents.ents: # TODO: Override 'in' operator
             if 'cooldown_timer' not in ent or ent.cooldown_timer == 0:
-                do_attack(ent, self.ents[ent.attack_target])
+                do_attack(ent, self.ents[ent.attack_target], self.data, self.ents)
                 ent.cooldown_timer = ent.weapon['cooldown']
         else:
             # Target is gone - stop attacking
             del ent.attack_target
 
 
-def do_attack(attacker, target):
+def do_attack(attacker, target, data, ents):
     if 'hp' in target and 'weapon' in attacker and 'damage' in attacker.weapon:
         target.hp = target.hp - attacker.weapon['damage']
         
@@ -27,6 +28,11 @@ def do_attack(attacker, target):
                 target.pos[1] - attacker.pos[1],
                 target.pos[0] - attacker.pos[0])
             )
+
+        if 'impact' in attacker.weapon:
+            ents.add_ent(data.spawn(attacker.weapon['impact'],
+                    pos = target.pos
+            ))
 
 
 

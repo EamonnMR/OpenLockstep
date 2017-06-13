@@ -1,7 +1,7 @@
 tank:
   unit: True
   hp: 10
-  sprite: tank
+  sprite: tank 
   movetype: fly
   speed: 3
   orders:
@@ -9,6 +9,7 @@ tank:
     - stop
     - attack
   weapon:
+    impact: small_exp
     cooldown: 1
     damage: 1
     projectile: projectile_1
@@ -48,3 +49,7 @@ purple_factory:
   orders:
     - make_sidecar
 
+small_exp:
+  explosion: True
+  sprite: small_exp
+  frame: 0

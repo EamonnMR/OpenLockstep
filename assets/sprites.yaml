@@ -24,3 +24,6 @@ scand_selection:
 shot_1:
   file: "danc_cc_by/shot_1.png"
   x_frames: 8
+small_exp:
+  file: "danc_cc_by/expSmall.png"
+  x_frames: 7

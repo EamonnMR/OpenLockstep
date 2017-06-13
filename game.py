@@ -6,7 +6,6 @@ import pygame
 import net
 import commands
 from ecs import System, DrawSystem, EntityManager, Entity
-from data import DataLoader
 import gui
 import graphics
 
@@ -17,16 +16,13 @@ class Game:
     Calling "start" runs the game loop. Inside the game loop, the event loop
     processes input and times when to finish and send a step.
     '''
-    def __init__(self, settings, args, entities): # The settings/args split may be a pain
-        self.screen = pygame.display.set_mode(settings['screen_size'])
+    def __init__(self, settings, args, entities, data, screen): # The settings/args split may be a pain
         pygame.display.set_caption("OpenLockstep RTS")
         self.client = net.Client(args.host, args.port)
         self.step = None
         self.command_list = None
-
-        self.data = DataLoader(settings['assets'])
-        self.data.preload()
-        self.data.load()
+        self.data = data
+        self.screen = screen
         self.entities = entities
         self.entities.add_draw_system(
                 graphics.SpriteDrawSystem(screen=self.screen,
