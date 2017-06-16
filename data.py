@@ -90,6 +90,4 @@ class DataLoader:
             if not k.startswith('_')}) # Leading underscore = metadata
         mutable.update(kwargs)
 
-        print(mutable)
-
         return Entity(mutable)

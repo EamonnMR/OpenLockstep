@@ -50,10 +50,20 @@ class SpriteDrawSystem(ecs.DrawSystem):
         self.screen = screen
         self.criteria = ['pos', 'sprite']
 
-
     def draw_individual(self, ent):
         frame = 0
         if 'dir' in ent:
             frame = ent.dir
+        if 'frame' in ent:
+            frame = ent.frame
         self.sprites[ent.sprite].draw(ent.pos[0], ent.pos[1], frame, self.screen)
 
+class ExplosionAnimationSystem(ecs.System):
+    def __init__(self, data):
+        self.criteria = ['explosion', 'frame', 'sprite']
+        self.data = data
+
+    def do_step_individual(self, ent):
+        ent.frame = ent.frame + 1
+        if ent.frame >= self.data.sprites[ent.sprite].x_frames:
+            ent.delete = True

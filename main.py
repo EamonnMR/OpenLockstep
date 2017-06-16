@@ -13,6 +13,9 @@ import game
 import gui
 import ecs
 import movement
+import combat
+import graphics
+from data import DataLoader
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Runs OpenLockstep')
@@ -29,17 +32,27 @@ if __name__ == "__main__":
 
     settings = yaml.load(open(args.settings_file))
     settings.update(yaml.load(args.settings))
+    data = DataLoader(settings['assets'])
+    data.preload()
     ent_manager = ecs.EntityManager(
         systems=[
-            movement.MoveSystem()
+            graphics.ExplosionAnimationSystem(data),
+            movement.MoveSystem(),
+            combat.HitPointSystem(),
+            combat.CooldownSystem(),
         ],
-            filters={
-                'RectFilter': gui.RectFilter(),
-            }
-        )
+        filters={
+            'RectFilter': gui.RectFilter(),
+        }
+    )
+    ent_manager.add_system(combat.AttackSystem(ent_manager, data),
+            index=1)
+    ent_manager.add_system(ecs.DeletionSystem(ent_manager))
 
     if args.client:
-        game.Game(settings, args, ent_manager).start()
+        screen = pygame.display.set_mode(settings['screen_size'])
+        data.load()
+        game.Game(settings, args, ent_manager, data, screen).start()
     elif args.server:
         net.Server(settings, args.port, host=args.host,
                 client_count=args.clients,

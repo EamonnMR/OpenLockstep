@@ -11,12 +11,22 @@ make_sidecar:
     type: sidecar
   key: q
   sprite: button_sidecar
+
 move:
   cmd: move
   key: m
   sprite: button_move
+  selector: crosshairs
 
 stop:
   cmd: stop
-  key: s
+  key: t 
   sprite: button_stop
+  selector: crosshairs
+
+attack:
+  cmd: attackmove
+  cmd_with_target: attack
+  key: a
+  selector: unitpicker
+

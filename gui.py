@@ -1,10 +1,13 @@
+import math
+
 import pygame
 
 import ecs
 import commands
 
 class GUI:
-    def __init__(self, ecs, mouse_spr, screen, data):
+    def __init__(self, ecs, mouse_spr, screen, data, player_id):
+        self.mouse_spr = mouse_spr
         self.mouse = NormalMouse(mouse_spr, self)
         self.screen = screen
         self.selected_units = []
@@ -12,11 +15,13 @@ class GUI:
         self.buttons = []
         self.active_hotkeys = {}
         self.data = data
+        self.player_id = player_id
 
     def update_selection(self, new_selection):
         self.selected_units = new_selection
-
-        if len(self.selected_units):
+        units = self.get_units()
+        if len(self.selected_units) and all(
+                [unit.owner == self.player_id for unit in units]):
         
             orders = [self.data['orders'][order] for order in 
                     set.intersection(
@@ -28,7 +33,7 @@ class GUI:
 
             # TODO: Also populate buttons
         else:
-            active_hotkeys = {}
+            self.active_hotkeys = {}
 
     def get_units(self):
         return [self.ecs[id] for id in self.selected_units]
@@ -52,10 +57,13 @@ class GUI:
             hotkey = chr(event.key)
             if hotkey in self.active_hotkeys:
                 order = self.active_hotkeys[hotkey]
-                print(self.active_hotkeys)
-                return commands.get_mapped(order['cmd'])(
-                        ids=self.selected_units, **(order['args'] if 'args' in order else {})
-                )
+                if "selector" in order:
+                    self.mouse = SELECTORS[order['selector']](self.mouse_spr, self, order)
+                else:
+                    return commands.get_mapped(order['cmd'])(
+                            ids=self.selected_units,
+                            **(order['args'] if 'args' in order else {})
+                    )
             else:
                 return None
     
@@ -86,6 +94,64 @@ class MouseMode:
     def left_down(self):
         pass
 
+class CrosshairsMouse(MouseMode):
+    def __init__(self, sprite, parent, order):
+        pygame.mouse.set_visible(False)
+        self.parent = parent
+        self.sprite = sprite
+        self.order = order
+    
+    def draw(self):
+        x, y = pygame.mouse.get_pos()
+        self.sprite.draw(x, y, 13, self.parent.screen)
+
+    def set_normal_mouse(self):
+        self.parent.mouse = NormalMouse(self.parent.mouse_spr, self.parent)
+
+    def left_down(self):
+        self.set_normal_mouse()
+
+        # See if we've clicked on a unit
+        location = pygame.mouse.get_pos()
+
+        clicked = self.parent.ecs.filter('SpriteClickedFilter',
+                point=location)
+        if len(clicked) == 1:
+            return self.picked_unit(clicked[0])
+        else:
+            # Returns the appropriate command if any
+            return self.picked_location(location)
+
+    def right_down(self):
+        self.set_normal_mouse()
+    
+    def picked_location(self, location):
+        return self.construct_command(
+                self.order['cmd'], to=location)
+
+    def picked_unit(self, unit):
+        command = self.order['cmd']
+        if 'cmd_with_target' in self.order:
+            comand = self.order['cmd_with_target']
+
+        return self.construct_command(command,
+                to=self.parent.ecs[unit].pos)
+
+    def construct_command(self, command_type, **kwargs):
+        return commands.get_mapped(command_type)(
+            ids=self.parent.selected_units,
+            **(self.order['args'] if 'args' in self.order else {}),
+            **kwargs)
+
+class CrosshairsUnitPicker(CrosshairsMouse):
+    def picked_unit(self, unit):
+        command = self.order['cmd']
+        if 'cmd_with_target' in self.order:
+            command = self.order['cmd_with_target']
+
+        return self.construct_command(command, at=unit)
+
+
 class NormalMouse(MouseMode):
     def __init__(self, sprite, parent):
         pygame.mouse.set_visible(False)
@@ -111,12 +177,24 @@ class NormalMouse(MouseMode):
                 self.parent.screen)
     
     def left_up(self):
-        self.dragging = False
-        self.parent.update_selection(
-                self.parent.ecs.filter('RectFilter',
-                        rect=self.selection_box)
-        )
-        self.selection_box = None
+        if self.dragging:
+            self.dragging = False
+            # Logic to determine what ends up being selected
+            
+            units_in_rect_ids = self.parent.ecs.filter('RectFilter', rect=self.selection_box)
+            
+            units_in_rect = [self.parent.ecs[id] for id in units_in_rect_ids]
+            if len(units_in_rect) == 1 or all(
+                    ['owner' in unit and unit.owner == self.parent.player_id 
+                    for unit in units_in_rect]):
+                # User has selected exactly one unit or only units they own
+                self.parent.update_selection(units_in_rect_ids)
+            else:
+                self.parent.update_selection([
+                    unit.id for unit in units_in_rect
+                    if 'owner' in unit and unit.owner == self.parent.player_id
+                    ])
+            self.selection_box = None
 
     def left_down(self):
         self.dragging = True
@@ -125,10 +203,12 @@ class NormalMouse(MouseMode):
 
     def right_down(self):
         if self.parent.selected_units:
-            units = [self.parent.ecs[id] for id in self.parent.selected_units]
+            units = [unit for unit in self.parent.get_units()
+                    if unit.owner == self.parent.player_id]
             # TODO: Filter-chaining should fix this
             # TODO: Implement 'unit_set' type - iterable but also features a 'filter' option?
-            return commands.Move(ids=[unit.id for unit in units if 'movetype' in unit],
+            return commands.Move(ids=[
+                unit.id for unit in units if 'orders' in unit and 'move' in unit.orders],
                     to=pygame.mouse.get_pos())
 
     def _update_selection_box(self):
@@ -152,13 +232,37 @@ class NormalMouse(MouseMode):
 
         self.selection_box = pygame.Rect(x, y, w, h)
 
+# TODO: Right now 'unit' is just what is selectable / targetable
+# This needs a saner setup, but that probably requires filter chaining / 
+# a major upgrade of how we handle filtering.
+
 class RectFilter(ecs.Filter):
     def apply_individual(self, ent, criteria):
         ''' criteria: {'rect': pygame.Rect}
         Checks to see if the entity is within the selected rect.'''
-        # TODO: Quadtre or some such
-        if 'pos' in ent and criteria['rect'].collidepoint(ent.pos):
+        # TODO: Quadtree, or some such
+        if 'unit' in ent and 'pos' in ent and criteria['rect'].collidepoint(ent.pos):
             return ent
+
+class SpriteClickedFilter(ecs.Filter):
+    def __init__(self, sprites):
+        self.sprites = sprites
+
+    def apply(self, ents, criteria):
+        # TODO: This is a bit of a hack, just doing a radius
+        x, y = criteria['point']
+        for ent in ents.values():
+            if 'pos' in ent and 'sprite' in ent and 'unit' in ent:
+                radius = self.sprites[ent.sprite].width / 2
+
+                distance = math.sqrt(
+                    ((ent.pos[0] - x) ** 2) +
+                    ((ent.pos[1] - y) ** 2)
+                )
+
+                if distance < radius:
+                    return [ent.id]
+        return []
 
 
 class SelectionDrawSystem(ecs.DrawSystem):
@@ -171,4 +275,12 @@ class SelectionDrawSystem(ecs.DrawSystem):
         for ent in ents:
             if ent.id in self.gui.selected_units:
                 self.sprite.draw(x=ent.pos[0], y=ent.pos[1],
-                        frame=0, screen=self.gui.screen)
+                        frame=0 if ent.owner and
+                            ent.owner == self.gui.player_id 
+                            else 1,
+                        screen=self.gui.screen)
+
+SELECTORS = {
+        'crosshairs': CrosshairsMouse,
+        'unitpicker': CrosshairsUnitPicker,
+}

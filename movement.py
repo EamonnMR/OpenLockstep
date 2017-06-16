@@ -2,6 +2,7 @@ import math
 
 from ecs import System
 import graphics
+import commands
 
 
 class MoveSystem(System):
@@ -20,4 +21,8 @@ class MoveSystem(System):
             int(ent.pos[0] + dx),
             int(ent.pos[1] + dy)
         )
+
+        if (ent.pos[0] - ent.move_goal[0]) < 2 and \
+                (ent.pos[1] - ent.move_goal[1]) < 2:
+            commands.clear_ai(ent)
 

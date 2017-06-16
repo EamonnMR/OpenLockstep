@@ -6,7 +6,6 @@ import pygame
 import net
 import commands
 from ecs import System, DrawSystem, EntityManager, Entity
-from data import DataLoader
 import gui
 import graphics
 
@@ -17,16 +16,13 @@ class Game:
     Calling "start" runs the game loop. Inside the game loop, the event loop
     processes input and times when to finish and send a step.
     '''
-    def __init__(self, settings, args, entities): # The settings/args split may be a pain
-        self.screen = pygame.display.set_mode(settings['screen_size'])
+    def __init__(self, settings, args, entities, data, screen): # The settings/args split may be a pain
         pygame.display.set_caption("OpenLockstep RTS")
         self.client = net.Client(args.host, args.port)
         self.step = None
         self.command_list = None
-
-        self.data = DataLoader(settings['assets'])
-        self.data.preload()
-        self.data.load()
+        self.data = data
+        self.screen = screen
         self.entities = entities
         self.entities.add_draw_system(
                 graphics.SpriteDrawSystem(screen=self.screen,
@@ -39,10 +35,16 @@ class Game:
         hs_step = self.client.block_until_get_step(net.HANDSHAKE_STEP)
         for command in hs_step.commands:
             if type(command) == commands.Handshake:
-                for player_id, info in command.startlocs.items():
+                # Create players with entity IDs corresponding to their player IDs
+                for player_id in sorted(command.startlocs):
+                    self.entities.add_ent(Entity({'player_id': int(player_id),
+                        'faction': command.startlocs[player_id]['fac']}))
+                # Now that we have player ents with the right IDs, spawn other stuff
+                for player_id in sorted(command.startlocs):
+                    info = command.startlocs[player_id]
                     start_building = self.data.data['factions'][info['fac']]['start_building']
                     self.entities.add_ent(self.data.spawn(
-                        utype=start_building, pos=info['start']))
+                        utype=start_building, pos=info['start'], owner=int(player_id)))
 
             self.player_id = command.your_id
         
@@ -56,12 +58,18 @@ class Game:
         self.gui = gui.GUI(self.entities,
                 self.data.sprites['scand_mouse'],
                 self.screen,
-                self.data.data)
+                self.data.data,
+                self.player_id)
 
         self.entities.add_draw_system(
                 gui.SelectionDrawSystem(screen=self.screen, gui=self.gui,
                     sprite=self.data.sprites['scand_selection']),
                 0) # We want it at 0 so as to be below the sprites.
+
+        self.entities.add_filter(
+                gui.SpriteClickedFilter(self.data.sprites)
+                )
+        print(self.entities.filters)
 
     def start(self):
         self.command_list = []
@@ -102,18 +110,7 @@ class Game:
 
     def execute_step(self, step):
         for command in step.commands:
-            if type(command) == commands.Move:
-                for id in command.ids:
-                    self.entities[id].move_goal = command.to
-            elif type(command) == commands.Make:
-                for id in command.ids:
-                    spawner = self.entities[id]
-                    self.entities.add_ent(
-                            self.data.spawn(utype=command.type,
-                            pos=[spawner.pos[0], spawner.pos[1] + 10],
-                            dir=0
-                            )
-                    )
+            command.execute(self.entities, self.data)
 
     def clear_buffer(self):
         self.screen.fill((0,0,0))

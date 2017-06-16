@@ -65,6 +65,7 @@ class EntityManager:
         ent.id = id
         self.ents[id] = ent
         self.ent_count += 1
+        print(ent)
 
     def filter(self, filter_id, **kwargs):
         return self.filters[filter_id].apply(self.ents, kwargs)
@@ -81,6 +82,12 @@ class EntityManager:
             self.systems.insert(index, new_system)
         else:
             self.systems.append(new_system)
+    
+    def add_filter(self, new_filter, name=None):
+        if name:
+            self.filters[name] = new_filter
+        else:
+            self.filters[type(new_filter).__name__] = new_filter
 
     def __getitem__(self, id):
         return self.ents[id]
@@ -186,7 +193,7 @@ class Entity(dict):
 class DeletionSystem(System):
     def __init__(self, mgr):
         self.mgr = mgr
-        self.criteria = ['del', 'id']
+        self.criteria = ['delete', 'id']
 
     def do_step_all(self, ents):
         to_delete = []
@@ -195,5 +202,5 @@ class DeletionSystem(System):
             to_delete.append(ent.id)
 
         for id in to_delete:
-           del mgr.ents[id]
+           del self.mgr.ents[id]
 

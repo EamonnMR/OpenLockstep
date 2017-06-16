@@ -1,26 +1,55 @@
 tank:
-  sprite: tank
+  unit: True
+  hp: 10
+  sprite: tank 
   movetype: fly
   speed: 3
   orders:
     - move
     - stop
+    - attack
+  weapon:
+    impact: small_exp
+    cooldown: 1
+    damage: 1
+    projectile: projectile_1
 
 sidecar:
+  unit: True
+  hp: 10
   sprite: sidecar
   movetype: fly
   speed: 3
   orders:
     - move
     - stop
+    - attack
+  weapon:
+    cooldown: 1
+    damage: 1
+    projectile: projectile_1
+
+projectile_1:
+  speed: 10
+  movetype: fly
+  projectile:
+    damage: 1
 
 tan_factory:
+  unit: True
+  hp: 20
   sprite: building
   orders:
     - make_tank
 
 purple_factory:
+  unit: True
+  hp: 20
   sprite: factory
   orders:
     - make_sidecar
 
+small_exp:
+  explosion: True
+  sprite: small_exp
+  frame: 0
