@@ -67,11 +67,12 @@ class Ping(Command):
         self.position = position
 
 class Handshake(Command):
-    net_members = ['startlocs', 'your_id']
+    net_members = ['startlocs', 'your_id', 'map']
 
-    def __init__(self, your_id=0, startlocs={}):
+    def __init__(self, your_id=0, startlocs={}, map=''):
         self.startlocs = startlocs
         self.your_id = your_id
+        self.map = map
 
 
 class Move(Command):

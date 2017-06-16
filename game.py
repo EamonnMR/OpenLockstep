@@ -2,6 +2,7 @@ import sys
 import math
 
 import pygame
+import pytmx
 
 import net
 import commands
@@ -47,6 +48,8 @@ class Game:
                         utype=start_building, pos=info['start'], owner=int(player_id)))
 
             self.player_id = command.your_id
+
+            self.map = pytmx.TiledMap(command.map)
         
         print("Handshake complete. Your player ID: {}".format(self.player_id))
 
