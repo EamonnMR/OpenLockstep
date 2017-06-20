@@ -2,7 +2,8 @@ import sys
 import math
 
 import pygame
-import pytmx
+from pytmx.util_pygame import load_pygame
+import pyscroll
 
 import net
 import commands
@@ -31,6 +32,9 @@ class Game:
         )
 
         self.player_id = None
+        self.map = None
+        self.map_layer = None
+        self.screen_size = settings['screen_size']
 
     def do_handshake(self):
         hs_step = self.client.block_until_get_step(net.HANDSHAKE_STEP)
@@ -49,7 +53,10 @@ class Game:
 
             self.player_id = command.your_id
 
-            self.map = pytmx.TiledMap(command.map)
+            self.map = load_pygame(command.map)
+
+            self.map_layer = pyscroll.BufferedRenderer(pyscroll.TiledMapData(self.map),
+                    self.screen_size) 
         
         print("Handshake complete. Your player ID: {}".format(self.player_id))
 
@@ -80,9 +87,13 @@ class Game:
         self.step = net.INITIAL_STEP
         pygame.time.set_timer(TIMER_EVENT, STEP_LENGTH)
         while True:
-            self.clear_buffer()  # We won't need to do this when we draw a map 
             for event in pygame.event.get():
                 self.process_event(event)
+
+            self.map_layer.draw(self.screen,
+                    pygame.Rect(0,0,
+                        self.screen_size[0],
+                        self.screen_size[1]))
             self.entities.draw()
             self.gui.draw()
             pygame.display.flip()
@@ -115,6 +126,4 @@ class Game:
         for command in step.commands:
             command.execute(self.entities, self.data)
 
-    def clear_buffer(self):
-        self.screen.fill((0,0,0))
 
