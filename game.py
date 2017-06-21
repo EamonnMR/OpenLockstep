@@ -35,6 +35,7 @@ class Game:
         self.map = None
         self.map_layer = None
         self.screen_size = settings['screen_size']
+        self.offset = [0,0]
 
     def do_handshake(self):
         hs_step = self.client.block_until_get_step(net.HANDSHAKE_STEP)
@@ -69,7 +70,9 @@ class Game:
                 self.data.sprites['scand_mouse'],
                 self.screen,
                 self.data.data,
-                self.player_id)
+                self.player_id,
+                self,
+        ) # TODO: Clean up this leaky abstraction
 
         self.entities.add_draw_system(
                 gui.SelectionDrawSystem(screen=self.screen, gui=self.gui,
@@ -89,12 +92,10 @@ class Game:
         while True:
             for event in pygame.event.get():
                 self.process_event(event)
-
+            self.map_layer.center(self.get_center())
             self.map_layer.draw(self.screen,
-                    pygame.Rect(0,0,
-                        self.screen_size[0],
-                        self.screen_size[1]))
-            self.entities.draw()
+                    pygame.Rect((0,0), self.screen_size))
+            self.entities.draw(self.offset)
             self.gui.draw()
             pygame.display.flip()
 
@@ -126,4 +127,6 @@ class Game:
         for command in step.commands:
             command.execute(self.entities, self.data)
 
+    def get_center(self):
+        return self.screen_size[0]/2 + self.offset[0], self.screen_size[1]/2 + self.offset[1]
 

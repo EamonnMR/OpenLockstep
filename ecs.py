@@ -53,10 +53,10 @@ class EntityManager:
 
         return state_hash
     
-    def draw(self):
+    def draw(self, offset):
         # This should have no side effects
         for system in self.draw_systems:
-            system.draw(self.ents)
+            system.draw(self.ents, offset)
 
 
     def add_ent(self, ent):
@@ -144,19 +144,19 @@ class DrawSystem:
     def __init__(self):
         self.criteria = []
 
-    def draw(self, unfiltered_list):
+    def draw(self, unfiltered_list, offset):
         ''' This is called with a list of all of the ents. If the system
         needs filtering beyond checking criteria, override this method.'''
         self.draw_all([ent for ent in unfiltered_list.values()
-                if all([comp in ent for comp in self.criteria])])
+                if all([comp in ent for comp in self.criteria])], offset)
 
-    def draw_all(self, ents):
+    def draw_all(self, ents, offset):
         ''' This is called on all ents that meet criteria. Use this to
         do draws that involve multiple entities '''
         for ent in ents:
-            self.draw_individual(ent)
+            self.draw_individual(ent, offset)
 
-    def draw_individual(self, ent):
+    def draw_individual(self, ent, offset):
         '''Called for each ent that meets the criteria. Use this for
         simple drawing, such as drawing a sprite for each unit.'''
         pass

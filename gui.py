@@ -6,7 +6,7 @@ import ecs
 import commands
 
 class GUI:
-    def __init__(self, ecs, mouse_spr, screen, data, player_id):
+    def __init__(self, ecs, mouse_spr, screen, data, player_id, parent):
         self.mouse_spr = mouse_spr
         self.mouse = NormalMouse(mouse_spr, self)
         self.screen = screen
@@ -16,6 +16,7 @@ class GUI:
         self.active_hotkeys = {}
         self.data = data
         self.player_id = player_id
+        self.parent = parent # TODO: Clean up abstraction
 
     def update_selection(self, new_selection):
         self.selected_units = new_selection
@@ -75,6 +76,15 @@ class GUI:
     def update(self):
         pass
 
+    def get_mouse_world_pos(self):
+        ''' Get the world-space coordinates for the mouse's current position '''
+        screen_pos = pygame.mouse.get_pos()
+        return screen_pos[0] + self.parent.offset[0], screen_pos[1] + self.parent.offset[1]
+
+    def get_screen_pos(self, pos):
+        ''' Transform a worldspace coordinate into a screen space coordinate '''
+        return self.pos[0] - self.parent.offset[0], self.pos[1] - self.parent.offset[1]
+
 class MouseMode:
     def draw(self):
         pass
@@ -112,7 +122,7 @@ class CrosshairsMouse(MouseMode):
         self.set_normal_mouse()
 
         # See if we've clicked on a unit
-        location = pygame.mouse.get_pos()
+        location = self.parent.get_mouse_world_pos()
 
         clicked = self.parent.ecs.filter('SpriteClickedFilter',
                 point=location)
@@ -181,7 +191,8 @@ class NormalMouse(MouseMode):
             self.dragging = False
             # Logic to determine what ends up being selected
             
-            units_in_rect_ids = self.parent.ecs.filter('RectFilter', rect=self.selection_box)
+            units_in_rect_ids = self.parent.ecs.filter('RectFilter',
+                    rect=self.selection_box.move(self.parent.parent.offset[0], self.parent.parent.offset[1]))
             
             units_in_rect = [self.parent.ecs[id] for id in units_in_rect_ids]
             if len(units_in_rect) == 1 or all(
@@ -209,7 +220,7 @@ class NormalMouse(MouseMode):
             # TODO: Implement 'unit_set' type - iterable but also features a 'filter' option?
             return commands.Move(ids=[
                 unit.id for unit in units if 'orders' in unit and 'move' in unit.orders],
-                    to=pygame.mouse.get_pos())
+                    to=self.parent.get_mouse_world_pos())
 
     def _update_selection_box(self):
         ix, iy = self.initial_drag_pos
@@ -271,10 +282,10 @@ class SelectionDrawSystem(ecs.DrawSystem):
         self.gui = gui
         self.sprite = sprite
 
-    def draw_all(self, ents):
+    def draw_all(self, ents, offset):
         for ent in ents:
             if ent.id in self.gui.selected_units:
-                self.sprite.draw(x=ent.pos[0], y=ent.pos[1],
+                self.sprite.draw(x=ent.pos[0] - offset[0], y=ent.pos[1] - offset[1],
                         frame=0 if ent.owner and
                             ent.owner == self.gui.player_id 
                             else 1,
