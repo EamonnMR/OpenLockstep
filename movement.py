@@ -22,7 +22,7 @@ class MoveSystem(System):
             int(ent.pos[1] + dy)
         )
 
-        if (ent.pos[0] - ent.move_goal[0]) < 2 and \
-                (ent.pos[1] - ent.move_goal[1]) < 2:
+        if -2 < (ent.pos[0] - ent.move_goal[0]) < 2 and \
+           -2 < (ent.pos[1] - ent.move_goal[1]) < 2:
             commands.clear_ai(ent)
 
