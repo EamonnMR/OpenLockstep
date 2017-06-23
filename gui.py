@@ -5,6 +5,7 @@ import pygame
 import ecs
 import commands
 
+
 class GUI:
     def __init__(self, ecs, mouse_spr, screen, data, player_id, parent):
         self.mouse_spr = mouse_spr
@@ -17,6 +18,7 @@ class GUI:
         self.data = data
         self.player_id = player_id
         self.parent = parent # TODO: Clean up abstraction
+        self.global_keys = [pygame.K_DOWN, pygame.K_UP, pygame.K_LEFT, pygame.K_RIGHT]
 
     def update_selection(self, new_selection):
         self.selected_units = new_selection
@@ -40,34 +42,44 @@ class GUI:
         return [self.ecs[id] for id in self.selected_units]
 
     def handle_event(self, event):
-        ''' Returns commands if any'''
+        ''' Returns commands if any, new offset'''
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
-                return self.mouse.left_up()
+                return self.mouse.left_up(), self.parent.offset
             elif event.button == 3:
-                return self.mouse.right_up()
+                return self.mouse.right_up(), self.parent.offset
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                return self.mouse.left_down()
+                return self.mouse.left_down(), self.parent.offset
             elif event.button == 3:
-                return self.mouse.right_down()
-        elif event.type == pygame.KEYDOWN:
-            # This is fine as an MVP but I think that determining the order
-            # set at selection-time might be saner.
-            hotkey = chr(event.key)
-            if hotkey in self.active_hotkeys:
-                order = self.active_hotkeys[hotkey]
-                if "selector" in order:
-                    self.mouse = SELECTORS[order['selector']](self.mouse_spr, self, order)
-                else:
-                    return commands.get_mapped(order['cmd'])(
-                            ids=self.selected_units,
-                            **(order['args'] if 'args' in order else {})
-                    )
+                return self.mouse.right_down(), self.parent.offset
             else:
                 return None
-    
+
+        elif event.type == pygame.KEYUP:
+            return self.global_key_up(event.key)
+
+        elif event.type == pygame.KEYDOWN:
+            if event.key in self.global_keys:
+                return self.global_key_down(event.key)
+            else:
+                hotkey = chr(event.key)
+                if hotkey in self.active_hotkeys:
+                    order = self.active_hotkeys[hotkey]
+                    if "selector" in order:
+                        self.mouse = SELECTORS[order['selector']](
+                                self.mouse_spr, self, order)
+                        return None
+                    else:
+                        return commands.get_mapped(order['cmd'])(
+                                ids=self.selected_units,
+                                **(order['args'] if 'args' in order else {})
+                        ), self.parent.offset
+                else:
+                    return None
+        else:
+            return None
 
     def draw(self):
         # TODO: Draw gui stuff here
@@ -85,7 +97,26 @@ class GUI:
         ''' Transform a worldspace coordinate into a screen space coordinate '''
         return self.pos[0] - self.parent.offset[0], self.pos[1] - self.parent.offset[1]
 
+    def global_key_down(self, key):
+        if key == pygame.K_DOWN:
+            return None, (self.parent.offset[0], self.parent.offset[1] + 10)
+        elif key == pygame.K_UP:
+            return None, (self.parent.offset[0], self.parent.offset[1] - 10)
+        elif key == pygame.K_LEFT:
+            return None, (self.parent.offset[0] - 10, self.parent.offset[1])
+        elif key == pygame.K_RIGHT:
+            return None, (self.parent.offset[0] + 10, self.parent.offset[1])
+        else:
+            return None
+
+    def global_key_up(self, key):
+        return None
+
+
 class MouseMode:
+    def check_edges(self):
+        pass
+        # Convuluted logic to decide what direction to scroll in goes here
     def draw(self):
         pass
 
@@ -287,9 +318,22 @@ class SelectionDrawSystem(ecs.DrawSystem):
             if ent.id in self.gui.selected_units:
                 self.sprite.draw(x=ent.pos[0] - offset[0], y=ent.pos[1] - offset[1],
                         frame=0 if ent.owner and
+                            # TODO: Why does this break for player 0?
                             ent.owner == self.gui.player_id 
                             else 1,
                         screen=self.gui.screen)
+
+class GoalDrawSystem(ecs.DrawSystem):
+    def __init__(self, gui, sprite):
+        self.criteria = ['move_goal']
+        self.gui = gui
+        self.sprite = sprite
+
+    def draw_all(self, ents, offset):
+        for ent in ents:
+            if ent.id in self.gui.selected_units:
+                self.sprite.draw(x=ent.move_goal[0] - offset[0],
+                        y = ent.move_goal[1] - offset[1], frame=8, screen=self.gui.screen)
 
 SELECTORS = {
         'crosshairs': CrosshairsMouse,

@@ -79,6 +79,11 @@ class Game:
                     sprite=self.data.sprites['scand_selection']),
                 0) # We want it at 0 so as to be below the sprites.
 
+        self.entities.add_draw_system(
+                gui.GoalDrawSystem(gui=self.gui,
+                    sprite=self.data.sprites['scand_mouse'])
+                )
+
         self.entities.add_filter(
                 gui.SpriteClickedFilter(self.data.sprites)
                 )
@@ -106,9 +111,12 @@ class Game:
             pygame.quit()
             sys.exit(1)
         else:
-            command = self.gui.handle_event(event)
-            if command:
-                self.command_list.append(command)
+            result = self.gui.handle_event(event)
+            if result:
+                command, self.offset = result
+                # TODO: Get offset updates from some sort of GUI update func
+                if command:
+                    self.command_list.append(command)
 
     def advance_step(self):
         # Transmit accumulated commands then clear list
