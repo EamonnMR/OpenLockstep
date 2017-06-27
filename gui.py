@@ -9,7 +9,7 @@ import commands
 SCROLL_SPEED = 10
 
 class GUI:
-    def __init__(self, ecs, mouse_spr, screen, data, player_id, parent):
+    def __init__(self, ecs, mouse_spr, screen, data, player_id, parent, max_scroll):
         self.mouse_spr = mouse_spr
         self.mouse = NormalMouse(mouse_spr, self)
         self.screen = screen
@@ -24,6 +24,7 @@ class GUI:
 
         self.global_keys = [pygame.K_DOWN, pygame.K_UP, pygame.K_LEFT, pygame.K_RIGHT]
         self.left, self.right, self.up, self.down = (False, False, False, False)
+        self.max_scroll = (1400, 1530)
 
     def update_selection(self, new_selection):
         self.selected_units = new_selection
@@ -139,7 +140,19 @@ class GUI:
         elif self.down and not self.up:
             y += SCROLL_SPEED
 
-        return x, y
+        max_x, max_y = self.max_scroll
+
+        if x < 0:
+            x = 0
+        elif x > max_x:
+            x = max_x
+
+        if y < 0:
+            y = 0
+        elif y > max_y:
+            y = max_y
+
+        return int(x), int(y)
 
 
 class MouseMode:

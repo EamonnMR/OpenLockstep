@@ -62,7 +62,7 @@ class Game:
         print("Handshake complete. Your player ID: {}".format(self.player_id))
 
         self.state_hash = net.EMPTY_HASH 
-        
+
         # TODO: When implementing factions/game modes, use this area to
         # instantiate the GUI differently based on the handshake.
         # For now we hard code how the GUI will look.
@@ -72,6 +72,8 @@ class Game:
                 self.data.data,
                 self.player_id,
                 self,
+                ((self.map.width * self.map.tilewidth) + self.screen_size[0],
+                 (self.map.height * self.map.tileheight) + self.screen_size[1])
         ) # TODO: Clean up this leaky abstraction
 
         self.entities.add_draw_system(
