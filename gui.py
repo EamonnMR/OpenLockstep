@@ -6,6 +6,8 @@ import ecs
 import commands
 
 
+SCROLL_SPEED = 10
+
 class GUI:
     def __init__(self, ecs, mouse_spr, screen, data, player_id, parent):
         self.mouse_spr = mouse_spr
@@ -18,7 +20,10 @@ class GUI:
         self.data = data
         self.player_id = player_id
         self.parent = parent # TODO: Clean up abstraction
+        # Scrolling stuff:
+
         self.global_keys = [pygame.K_DOWN, pygame.K_UP, pygame.K_LEFT, pygame.K_RIGHT]
+        self.left, self.right, self.up, self.down = (False, False, False, False)
 
     def update_selection(self, new_selection):
         self.selected_units = new_selection
@@ -45,15 +50,15 @@ class GUI:
         ''' Returns commands if any, new offset'''
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
-                return self.mouse.left_up(), self.parent.offset
+                return self.mouse.left_up()
             elif event.button == 3:
-                return self.mouse.right_up(), self.parent.offset
+                return self.mouse.right_up()
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                return self.mouse.left_down(), self.parent.offset
+                return self.mouse.left_down()
             elif event.button == 3:
-                return self.mouse.right_down(), self.parent.offset
+                return self.mouse.right_down()
             else:
                 return None
 
@@ -75,7 +80,7 @@ class GUI:
                         return commands.get_mapped(order['cmd'])(
                                 ids=self.selected_units,
                                 **(order['args'] if 'args' in order else {})
-                        ), self.parent.offset
+                        )
                 else:
                     return None
         else:
@@ -99,18 +104,42 @@ class GUI:
 
     def global_key_down(self, key):
         if key == pygame.K_DOWN:
-            return None, (self.parent.offset[0], self.parent.offset[1] + 10)
+            self.down = True
         elif key == pygame.K_UP:
-            return None, (self.parent.offset[0], self.parent.offset[1] - 10)
+            self.up = True
         elif key == pygame.K_LEFT:
-            return None, (self.parent.offset[0] - 10, self.parent.offset[1])
+            self.left = True
         elif key == pygame.K_RIGHT:
-            return None, (self.parent.offset[0] + 10, self.parent.offset[1])
-        else:
-            return None
+            self.right = True
+
+        return None
 
     def global_key_up(self, key):
+        if key == pygame.K_DOWN:
+            self.down = False
+        elif key == pygame.K_UP:
+            self.up = False
+        elif key == pygame.K_LEFT:
+            self.left = False
+        elif key == pygame.K_RIGHT:
+            self.right = False
+        
         return None
+
+    def get_offset(self):
+        # TODO: Check for diagonals, in that case do SCROLL_SPEED * SRQ 2 in each dir
+        x, y = self.parent.offset
+        if self.left and not self.right:
+            x -= SCROLL_SPEED
+        elif self.right and not self.left:
+            x += SCROLL_SPEED
+
+        if self.up and not self.down:
+            y -= SCROLL_SPEED
+        elif self.down and not self.up:
+            y += SCROLL_SPEED
+
+        return x, y
 
 
 class MouseMode:

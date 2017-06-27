@@ -97,6 +97,7 @@ class Game:
         while True:
             for event in pygame.event.get():
                 self.process_event(event)
+            self.offset = self.gui.get_offset()
             self.map_layer.center(self.get_center())
             self.map_layer.draw(self.screen,
                     pygame.Rect((0,0), self.screen_size))
@@ -111,12 +112,9 @@ class Game:
             pygame.quit()
             sys.exit(1)
         else:
-            result = self.gui.handle_event(event)
-            if result:
-                command, self.offset = result
-                # TODO: Get offset updates from some sort of GUI update func
-                if command:
-                    self.command_list.append(command)
+            command = self.gui.handle_event(event)
+            if command:
+                self.command_list.append(command)
 
     def advance_step(self):
         # Transmit accumulated commands then clear list
