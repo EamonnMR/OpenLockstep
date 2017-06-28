@@ -4,10 +4,10 @@ import pygame
 
 import ecs
 import commands
-
+import util 
 
 SCROLL_SPEED = 10
-
+SCROLL_MARGIN = 15
 class GUI:
     def __init__(self, ecs, mouse_spr, screen, data, player_id, parent, max_scroll):
         self.mouse_spr = mouse_spr
@@ -91,9 +91,6 @@ class GUI:
         # TODO: Draw gui stuff here
         self.mouse.draw()
 
-    def update(self):
-        pass
-
     def get_mouse_world_pos(self):
         ''' Get the world-space coordinates for the mouse's current position '''
         screen_pos = pygame.mouse.get_pos()
@@ -129,15 +126,22 @@ class GUI:
 
     def get_offset(self):
         # TODO: Check for diagonals, in that case do SCROLL_SPEED * SRQ 2 in each dir
+        m_left, m_right, m_up, m_down = self.mouse.scroll_update()
+
+        left = self.left or m_left
+        right = self.right or m_right
+        up = self.up or m_up
+        down = self.down or m_down
+
         x, y = self.parent.offset
-        if self.left and not self.right:
+        if left and not right:
             x -= SCROLL_SPEED
-        elif self.right and not self.left:
+        elif right and not left:
             x += SCROLL_SPEED
 
-        if self.up and not self.down:
+        if up and not down:
             y -= SCROLL_SPEED
-        elif self.down and not self.up:
+        elif down and not up:
             y += SCROLL_SPEED
 
         max_x, max_y = self.max_scroll
@@ -156,9 +160,7 @@ class GUI:
 
 
 class MouseMode:
-    def check_edges(self):
-        pass
-        # Convuluted logic to decide what direction to scroll in goes here
+    ''' Implementations should have a 'parent' member which points to a gui '''
     def draw(self):
         pass
 
@@ -176,6 +178,44 @@ class MouseMode:
 
     def left_down(self):
         pass
+
+    def scroll_update(self):
+        x, y = pygame.mouse.get_pos()
+        return self.get_dir(x, y)
+
+    def get_dir(self, x, y):
+        right, left, up, down = (False, False, False, False)
+        if x - SCROLL_MARGIN <= 0:
+            right = True
+        elif x + SCROLL_MARGIN >= self.parent.parent.screen_size[0]:
+            left = True
+        if y - SCROLL_MARGIN <= 0:
+            up = True
+        elif y + SCROLL_MARGIN >= self.parent.parent.screen_size[1]:
+            down = True
+
+        return right, left, up, down
+
+class ScrollerMouse(MouseMode):
+    def __init__(self, sprite, parent, previous_mouse):
+        self.sprite = sprite
+        self.parent = parent
+        self.prev_mouse = previous_mouse
+    
+    def draw(self):
+        x, y = pygame.mouse.get_pos()
+        dir = self.get_dir(x, y)
+        self.sprite.draw({
+            util.RIGHT: 0,
+            util.BOTTOM_RIGHT: 1,
+            util.DOWN: 2,
+            util.BOTTOM_LEFT: 3,
+            util.LEFT: 4,
+            util.TOP_LEFT: 5,
+            util.UP: 6,
+            util.TOP_RIGHT: 7,
+            }[dir], self.parent.screen)
+
 
 class CrosshairsMouse(MouseMode):
     def __init__(self, sprite, parent, order):

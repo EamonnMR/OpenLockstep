@@ -36,6 +36,7 @@ class Game:
         self.map_layer = None
         self.screen_size = settings['screen_size']
         self.offset = [0,0]
+        self.grabbed = False
 
     def do_handshake(self):
         hs_step = self.client.block_until_get_step(net.HANDSHAKE_STEP)
@@ -89,7 +90,6 @@ class Game:
         self.entities.add_filter(
                 gui.SpriteClickedFilter(self.data.sprites)
                 )
-        print(self.entities.filters)
 
     def start(self):
         self.command_list = []
@@ -113,6 +113,9 @@ class Game:
         elif event.type == pygame.QUIT:
             pygame.quit()
             sys.exit(1)
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            self.grabbed = not self.grabbed
+            pygame.event.set_grab(self.grabbed)
         else:
             command = self.gui.handle_event(event)
             if command:
