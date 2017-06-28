@@ -126,7 +126,7 @@ class GUI:
 
     def get_offset(self):
         # TODO: Check for diagonals, in that case do SCROLL_SPEED * SRQ 2 in each dir
-        m_left, m_right, m_up, m_down = self.mouse.scroll_update()
+        m_right, m_left, m_up, m_down = self.mouse.scroll_update()
 
         left = self.left or m_left
         right = self.right or m_right
@@ -186,9 +186,9 @@ class MouseMode:
     def get_dir(self, x, y):
         right, left, up, down = (False, False, False, False)
         if x - SCROLL_MARGIN <= 0:
-            right = True
-        elif x + SCROLL_MARGIN >= self.parent.parent.screen_size[0]:
             left = True
+        elif x + SCROLL_MARGIN >= self.parent.parent.screen_size[0]:
+            right = True
         if y - SCROLL_MARGIN <= 0:
             up = True
         elif y + SCROLL_MARGIN >= self.parent.parent.screen_size[1]:
@@ -200,34 +200,46 @@ class ScrollerMouse(MouseMode):
     def __init__(self, sprite, parent, previous_mouse):
         self.sprite = sprite
         self.parent = parent
-        self.prev_mouse = previous_mouse
+        self.sprite_frame = 9
     
     def draw(self):
         x, y = pygame.mouse.get_pos()
         dir = self.get_dir(x, y)
-        self.sprite.draw({
-            util.RIGHT: 0,
-            util.BOTTOM_RIGHT: 1,
-            util.DOWN: 2,
-            util.BOTTOM_LEFT: 3,
-            util.LEFT: 4,
-            util.TOP_LEFT: 5,
-            util.UP: 6,
-            util.TOP_RIGHT: 7,
-            }[dir], self.parent.screen)
+        frame = self.sprite_frame
+        if any(dir):
+            frame = {
+                util.RIGHT: 0,
+                util.BOTTOM_RIGHT: 1,
+                util.DOWN: 2,
+                util.BOTTOM_LEFT: 3,
+                util.LEFT: 4,
+                util.TOP_LEFT: 5,
+                util.UP: 6,
+                util.TOP_RIGHT: 7,
+            }.get(dir, self.sprite_frame)
+
+            # Clamp to sides of screen
+            right, left, up, down = dir
+            if right:
+                x = self.parent.parent.screen_size[0] - self.sprite.width
+            elif left:
+                x = 0
+            if down:
+                y = self.parent.parent.screen_size[1] - self.sprite.height
+            elif up:
+                y = 0
+
+        self.sprite.draw(x, y, frame, self.parent.screen)
 
 
-class CrosshairsMouse(MouseMode):
+class CrosshairsMouse(ScrollerMouse):
     def __init__(self, sprite, parent, order):
         pygame.mouse.set_visible(False)
         self.parent = parent
         self.sprite = sprite
         self.order = order
+        self.sprite_frame = 13
     
-    def draw(self):
-        x, y = pygame.mouse.get_pos()
-        self.sprite.draw(x, y, 13, self.parent.screen)
-
     def set_normal_mouse(self):
         self.parent.mouse = NormalMouse(self.parent.mouse_spr, self.parent)
 
@@ -275,7 +287,7 @@ class CrosshairsUnitPicker(CrosshairsMouse):
         return self.construct_command(command, at=unit)
 
 
-class NormalMouse(MouseMode):
+class NormalMouse(ScrollerMouse):
     def __init__(self, sprite, parent):
         pygame.mouse.set_visible(False)
         self.parent = parent
@@ -283,6 +295,7 @@ class NormalMouse(MouseMode):
         self.dragging = False
         self.initial_drag_pos = None
         self.selection_box = None
+        self.sprite_frame = 11
 
     def draw(self):
         x, y = pygame.mouse.get_pos()
@@ -294,10 +307,10 @@ class NormalMouse(MouseMode):
                              (200, 200, 250),
                              self.selection_box, 
                              1)
-        self.sprite.draw(x, y,
-                11 if self.dragging else 12, 
-                # TODO: Idea: sprites with named frames?
-                self.parent.screen)
+        self.sprite_frame = 11 if self.dragging else 12
+
+        super(NormalMouse, self).draw()
+
     
     def left_up(self):
         if self.dragging:
