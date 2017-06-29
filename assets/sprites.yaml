@@ -27,3 +27,7 @@ shot_1:
 small_exp:
   file: "danc_cc_by/expSmall.png"
   x_frames: 7
+path:
+  file: "path.png"
+  x_frames: 2
+

@@ -10,6 +10,7 @@ import commands
 from ecs import System, DrawSystem, EntityManager, Entity
 import gui
 import graphics
+import movement
 
 TIMER_EVENT = pygame.USEREVENT + 1
 STEP_LENGTH = 250 # ms (250 is 4 times per second)
@@ -56,7 +57,7 @@ class Game:
             self.player_id = command.your_id
 
             self.map = load_pygame(command.map)
-
+            
             self.map_layer = pyscroll.BufferedRenderer(pyscroll.TiledMapData(self.map),
                     self.screen_size) 
         
@@ -90,6 +91,16 @@ class Game:
         self.entities.add_filter(
                 gui.SpriteClickedFilter(self.data.sprites)
                 )
+
+        self.entities.add_draw_system(
+                movement.PathabilityDrawSystem(
+                    pathing_data=[[True, False], [True, False]],
+                    tile_height=40,
+                    tile_width=40,
+                    sprite=self.data.sprites['path'],
+                    screen=self.screen
+                )
+        )
 
     def start(self):
         self.command_list = []
