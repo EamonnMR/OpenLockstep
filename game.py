@@ -91,12 +91,16 @@ class Game:
         self.entities.add_filter(
                 gui.SpriteClickedFilter(self.data.sprites)
                 )
-
+        # Pathing data - loading & displaying  
         self.entities.add_draw_system(
                 movement.PathabilityDrawSystem(
-                    pathing_data=[[True, False], [True, False]],
-                    tile_height=40,
-                    tile_width=40,
+                    pathing_data=[
+                        [   movement.is_pathable(self.map, i, j)
+                            for i in range(self.map.width)]
+                        for j in range(self.map.height)
+                    ],
+                    tile_height=self.map.tileheight,
+                    tile_width=self.map.tilewidth,
                     sprite=self.data.sprites['path'],
                     screen=self.screen
                 )

@@ -48,3 +48,11 @@ class PathabilityDrawSystem(DrawSystem):
             y += self.tile_height
             x = 0
 
+
+def is_pathable(tiled_map, x, y):
+    gid = tiled_map.get_tile_gid(x, y, 0)
+    if gid in tiled_map.tile_properties:
+        props = tiled_map.tile_properties[gid]
+        return 'p' in props and props['p'] == 't'
+    else:
+        return False
