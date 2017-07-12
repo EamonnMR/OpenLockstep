@@ -38,7 +38,7 @@ class Game:
         self.screen_size = settings['screen_size']
         self.offset = [0,0]
         self.grabbed = False
-        self.pathing_data = []
+        self.pathmap = []
         self.settings = settings
 
     def do_handshake(self):
@@ -94,15 +94,13 @@ class Game:
                 gui.SpriteClickedFilter(self.data.sprites)
                 )
         # Pathing data - loading & displaying
-        self.pathing_data=[
-                        [   movement.is_pathable(self.map, i, j)
-                            for i in range(self.map.width)]
-                        for j in range(self.map.height)
-                    ]
+
+        self.pathmap = movement.Pathmap(self.map)
+
         if 'show_pathing' in self.settings:
             self.entities.add_draw_system(
                     movement.PathabilityDrawSystem(
-                        pathing_data=self.pathing_data,
+                        pathmap=self.pathmap,
                         tile_height=self.map.tileheight,
                         tile_width=self.map.tilewidth,
                         sprite=self.data.sprites['path'],
