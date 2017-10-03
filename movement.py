@@ -64,11 +64,33 @@ class Pathmap:
     Tiled related cruft could probably be pulled down into a subclass
     '''
     def __init__(self, tiledmap):
+        self.width = tiledmap.width
+        self.height = tiledmap.height
         self.path_grid = [
                 [ is_pathable(tiledmap, i, j)
                     for i in range(tiledmap.width)]
                 for j in range(tiledmap.height)
 
         ]
+
+            
+    def get_neighbors(x, y):
+        if self.path_grid[y][x]:
+            return set([(nx, ny) for nx, ny in [
+                    # TODO: Add costs; diagonal is 2(sqrt(2)) iirc
+                    (x + 1, y, 1),
+                    # (x + 1, y + 1),
+                    # (x + 1, y - 1),
+                    (x, y + 1),
+                    (x, y - 1),
+                    (x - 1, y),
+                    #(x - 1, y + 1),
+                    #(x - 1, y - 1),
+                ] if 0 >= nx >= self.width and 
+                0 >= ny >= self.height and
+                self.path_grid[ny][nx]
+            ])
+        else:
+            return set()
 
 
