@@ -70,7 +70,6 @@ class EntityManager:
     def filter(self, filter_id, **kwargs):
         return self.filters[filter_id].apply(self.ents, kwargs)
 
-    # TODO: Add system, add filter, remove, etc
     def add_draw_system(self, new_draw_system, index=None):
         if index:
             self.draw_systems.insert(index, new_draw_system)
@@ -90,7 +89,19 @@ class EntityManager:
             self.filters[type(new_filter).__name__] = new_filter
 
     def __getitem__(self, id):
+        ''' If you do ecs[id] you get the end. Convenience. ''' 
         return self.ents[id]
+
+    def get_system(self, classname):
+        ''' Gets a system, if available, by class name.
+        This lets you, for example, put additional data in a
+        system during a handshake. Should probably not be used
+        during game because it's not fast. If fast becomes a
+        need, we should make a map of systems by classname.
+        '''
+        for system in self.systems:
+            if type(system).__name__ == classname:
+                return system
 
 
 class Filter:
@@ -176,10 +187,8 @@ class Entity(dict):
     a dict of the components you'd like in and it'll just
     work.
     
-    Ensure that components all implement a to_string function,
-    otherwise there will be issues because the plan is to use
-    stringified components as the basis for the hashes that will
-    determine if the states are locked in.
+    Ensure that all components implement .to_string because
+    that is how sync is ensured.
 
     '''
 

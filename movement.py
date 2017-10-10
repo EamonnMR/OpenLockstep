@@ -5,28 +5,94 @@ import graphics
 import commands
 
 
-class MoveSystem(System):
+def get_angle(goal, pos):
+    return math.atan2(goal[1] - pos[1], goal[0] - pos[0])
+
+def move_ent(ent, angle, distance):
+    # FIXME: Using stock float functions is bad, we need fixed point
+    # TODO: I fear sync issues
+    dx = math.cos(angle) * ent.speed
+    dy = math.sin(angle) * ent.speed
+    ent.pos = (
+        int(ent.pos[0] + dx),
+        int(ent.pos[1] + dy)
+    )
+
+def distance(lpos, rpos):
+    dx = rpos[0] - lpos[0]
+    dy = rpos[1] - lpos[1]
+    return math.sqrt(dx ** 2 + dy ** 2)
+
+class FlySystem(System):
+    ''' Simple move system which just turns towards the move
+    goal and goes straight towards it, ignoring any obstacles.'''
     def __init__(self):
-        self.criteria = ['pos', 'dir', 'move_goal']
+        self.criteria = ['pos', 'dir', 'move_goal', 'movetype_fly']
 
     def do_step_individual(self, ent):
-        angle = math.atan2(ent.move_goal[1] - ent.pos[1],
-                           ent.move_goal[0] - ent.pos[0])
+        angle = get_angle(goal, pos)
         ent.dir = graphics.angle_to_frame(angle)
-        # FIXME: Using stock float functions is bad, we need fixed point
-        # TODO: I fear sync issues
-        dx = (math.cos(angle) * ent.speed)
-        dy = math.sin(angle) * ent.speed
-        ent.pos = (
-            int(ent.pos[0] + dx),
-            int(ent.pos[1] + dy)
-        )
+        
+        move_ent(ent, angle, ent.speed)
 
         if -2 < (ent.pos[0] - ent.move_goal[0]) < 2 and \
            -2 < (ent.pos[1] - ent.move_goal[1]) < 2:
             commands.clear_ai(ent)
 
+class PathFollowSystem(System):
+    ''' Moves a unit along a prescribed path across the map. '''
+    def __init__(self):
+        self.criteria = ['pos', 'dir', 'path', 'speed']
+        self.pathmap = None
+        self.tile_offset = None
+        
+    def setup_post_handshake(self, pathmap):
+        self.pathmap = pathmap
+        self.tile_offset = (pathmap.width / 2, pathmap.height / 2)
+
+    def do_step_individual(self, ent):
+        # I noticed while looking over the old Scandium_rts code that
+        # there where a lot of baked in assumptions that the units would
+        # always be fixed to the grid. I think that though writing it
+        # without that assumption will make for less efficient code,
+        # more readable code is more important to this project, and it
+        # will be more useful when ultimately the assumption is broken
+        # by flocking / no overlapping unit behavour
+        print("Pathing: ")
+        print(ent)
+        speed_pool = ent.speed
+        while speed_pool > 0 and ent.path:
+
+            next_node = ent.path[-1]
+            next_node_pos = (
+                (next_node[0] * self.pathmap.width) + self.tile_offset[0],
+                (next_node[1] * self.pathmap.height) + self.tile_offset[1]
+            )
+
+            dist = distance(ent.pos, next_node_pos)
+            angle = get_angle(next_node_pos, ent.pos)
+            ent.dir = graphics.angle_to_frame(angle)
+            
+            if dist > speed_pool:
+                # We're not going to reach the node this step - go closer
+                move_ent(ent, angle, speed_pool)
+                break;
+            else:
+                # Enough speed is left to reach the next node.
+                # Subtract out the speed needed to travel the
+                # distance to the next node, and loop.
+                ent.pos = next_node_pos
+                ent.path.pop()
+                # TODO: Possible source of sync issues right here
+                speed_pool -= dist
+                continue
+        
+        
+
 class PathabilityDrawSystem(DrawSystem):
+    ''' A debugging tool to show what the pathing system
+    sees on a map. Useful for making maps as well as debugging
+    the pathing system. '''
     def __init__(self, pathmap, tile_height, tile_width, sprite, screen):
         self.pathing_data = pathmap.path_grid 
         self.tile_height = tile_height

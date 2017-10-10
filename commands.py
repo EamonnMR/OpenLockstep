@@ -85,7 +85,16 @@ class Move(Command):
     def execute(self, ecs, data):
         for id in self.ids:
             clear_ai(ecs[id])
-            ecs[id].move_goal = self.to
+            #ecs[id].move_goal = self.to
+            ecs[id].path = [
+                    (0,0),
+                    (1,0),
+                    (1,1),
+                    (2,2),
+                    (2,4),
+                    (2,5),
+                    (2,6),
+            ]
 
 
 class Attack(Move):
@@ -136,12 +145,20 @@ class Stop(Command):
             clear_ai(unit)
 
 def clear_ai(ent):
-    # TODO: Add behavior things to this list
-    active_members = ['move_goal', 'attack_target']
+    ''' Removes AI state from an entity. If this isn't
+    working, it's possible that someone has added new
+    AI components and not added them to this list!'''
+    active_members = [
+            'move_goal',
+            'attack_target'
+            'path'
+    ]
     for member in active_members:
         if member in ent:
             del ent[member]
-
+# Corresponds to commands in unit descriptions
+# TODO:  Obviate this with some sort of reflection
+# scheme?
 STR_COMMANDS = {
     'make': Make,
     'move': Move,
@@ -150,6 +167,8 @@ STR_COMMANDS = {
     'attackmove': AttackMove,
 }
 
+# What index this command is encoded as over the net.
+# TODO: Would it be possible to assign these automatically?
 INDEX_TO_COMMAND = {
     1: Ping,
     2: Handshake,
@@ -160,4 +179,6 @@ INDEX_TO_COMMAND = {
     7: AttackMove,
 }
 
+# An inverted list dict, so if 1: Ping, "Ping": 1
+# Thanks stackoverflow
 COMMAND_TO_INDEX = dict((item[1].__name__, bytes([item[0]])) for item in INDEX_TO_COMMAND.items())

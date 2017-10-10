@@ -107,6 +107,9 @@ class Game:
                         screen=self.screen
                     )
             )
+        self.entities.get_system("PathFollowSystem").setup_post_handshake(
+                self.pathmap,
+        )
 
     def start(self):
         self.command_list = []
