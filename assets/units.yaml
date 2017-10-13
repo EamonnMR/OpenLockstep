@@ -2,7 +2,6 @@ tank:
   unit: True
   hp: 10
   sprite: tank 
-  movetype: fly
   speed: 3
   orders:
     - move
@@ -18,7 +17,6 @@ sidecar:
   unit: True
   hp: 10
   sprite: sidecar
-  movetype: fly
   speed: 3
   orders:
     - move
@@ -31,7 +29,6 @@ sidecar:
 
 projectile_1:
   speed: 10
-  movetype: fly
   projectile:
     damage: 1
 

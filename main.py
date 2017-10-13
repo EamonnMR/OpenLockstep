@@ -59,4 +59,3 @@ if __name__ == "__main__":
         net.Server(settings, args.port, host=args.host,
                 client_count=args.clients,
                 ent_manager=ent_manager).run()
-

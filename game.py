@@ -89,6 +89,15 @@ class Game:
                 gui.GoalDrawSystem(gui=self.gui,
                     sprite=self.data.sprites['scand_mouse'])
                 )
+        
+        self.entities.add_draw_system(
+                gui.PathDrawSystem(gui=self.gui,
+                    sprite=self.data.sprites['scand_mouse'],
+                    tile_width=self.map.tilewidth,
+                    tile_height=self.map.tileheight,
+                )
+        )
+
 
         self.entities.add_filter(
                 gui.SpriteClickedFilter(self.data.sprites)

@@ -85,16 +85,7 @@ class Move(Command):
     def execute(self, ecs, data):
         for id in self.ids:
             clear_ai(ecs[id])
-            #ecs[id].move_goal = self.to
-            ecs[id].path = [
-                    (0,0),
-                    (1,0),
-                    (1,1),
-                    (2,2),
-                    (2,4),
-                    (2,5),
-                    (2,6),
-            ]
+            ecs[id].move_goal = self.to
 
 
 class Attack(Move):
@@ -151,7 +142,8 @@ def clear_ai(ent):
     active_members = [
             'move_goal',
             'attack_target'
-            'path'
+            'path',
+            'path_complete',
     ]
     for member in active_members:
         if member in ent:

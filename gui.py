@@ -430,6 +430,26 @@ class GoalDrawSystem(ecs.DrawSystem):
                 self.sprite.draw(x=ent.move_goal[0] - offset[0],
                         y = ent.move_goal[1] - offset[1], frame=8, screen=self.gui.screen)
 
+
+class PathDrawSystem(ecs.DrawSystem):
+    def __init__(self, gui, sprite, tile_height, tile_width):
+        self.criteria = ['path']
+        self.gui = gui
+        self.sprite = sprite
+        self.tile_height = tile_height
+        self.tile_width = tile_width
+
+    def draw_all(self, ents, offset):
+        for ent in ents:
+            if ent.id in self.gui.selected_units:
+                for node in ent.path:
+                    self.sprite.draw(
+                            x=(node[0] * self.tile_width) - offset[0],
+                            y=(node[1] * self.tile_height) - offset[1],
+                            frame=9,
+                            screen=self.gui.screen
+                        )
+
 SELECTORS = {
         'crosshairs': CrosshairsMouse,
         'unitpicker': CrosshairsUnitPicker,
