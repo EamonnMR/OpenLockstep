@@ -26,14 +26,14 @@ def distance(lpos, rpos):
 
 def basic_move(ent):
     # Moves an ent inexorably towards its move goal
-    angle = get_angle(goal, pos)
+    angle = get_angle(ent.move_goal, ent.pos)
     ent.dir = graphics.angle_to_frame(angle)
     
-    move_ent(ent, angle, ent.speed)
-
-    if -2 < (ent.pos[0] - ent.move_goal[0]) < 2 and \
-       -2 < (ent.pos[1] - ent.move_goal[1]) < 2:
+    if ent.speed >= distance(ent.pos, ent.move_goal) :
+        ent.pos = list(ent.move_goal)
         commands.clear_ai(ent)
+    else:
+        move_ent(ent, angle, ent.speed)
 
 
 class FlySystem(System):
@@ -89,7 +89,7 @@ class PathFollowSystem(System):
         while speed_pool > 0:
             if len(ent.path) <= 0:
                 del ent.path
-                ent.move_complete = True
+                ent.path_complete = True
                 return speed_pool
 
             next_node = ent.path[-1]
@@ -191,7 +191,10 @@ class Pathmap:
 
     def closest_node(self, pos):
         # TODO: Do better
-        node = (int(pos[0] / self.tilewidth), int(pos[1] / self.tileheight))
+        node = (
+                int((pos[0] ) / self.tilewidth),
+                int((pos[1] ) / self.tileheight)
+        )
         if self.on_map(node):
             return node
         else:
@@ -199,9 +202,9 @@ class Pathmap:
 
     def get_node_pos(self, node):
         return (
-                ((node[0] + .5) * self.tilewidth),
-                ((node[1] + .5) * self.tileheight)
-            )
+                int((node[0] + .5) * self.tilewidth),
+                int((node[1] + .5) * self.tileheight)
+        )
         
 
     def get_path_from_pos(self, position, destination):
