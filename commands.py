@@ -141,7 +141,7 @@ def clear_ai(ent):
     AI components and not added them to this list!'''
     active_members = [
             'move_goal',
-            'attack_target'
+            'attack_target',
             'path',
             'path_complete',
     ]
