@@ -187,7 +187,7 @@ class Pathmap:
     
     def on_map(self, node):
         x, y = node
-        return 0 <= x <= self.width and 0 <= y <= self.height
+        return 0 <= x < self.width and 0 <= y < self.height
 
     def closest_node(self, pos):
         # TODO: Do better
@@ -216,6 +216,8 @@ class Pathmap:
     def get_path(self, first_node, goal_node):
         # TODO: A*
         # TODO: Cache chunks
+        # TODO: Find large rectangular areas and draw straight paths
+        # through them as additional nodes to make it look more natural
         frontier = deque()
         frontier.append(first_node)
         came_from = {}
