@@ -2,7 +2,7 @@ tank:
   unit: True
   hp: 10
   sprite: tank 
-  speed: 3
+  speed: 8 
   orders:
     - move
     - stop
