@@ -76,8 +76,8 @@ class Game:
                 self.data.data,
                 self.player_id,
                 self,
-                ((self.map.width * self.map.tilewidth) + self.screen_size[0],
-                 (self.map.height * self.map.tileheight) + self.screen_size[1])
+                ((self.map.width * self.map.tilewidth) - self.screen_size[0],
+                 (self.map.height * self.map.tileheight) - self.screen_size[1])
         ) # TODO: Clean up this leaky abstraction
 
         self.entities.add_draw_system(

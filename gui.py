@@ -24,7 +24,8 @@ class GUI:
 
         self.global_keys = [pygame.K_DOWN, pygame.K_UP, pygame.K_LEFT, pygame.K_RIGHT]
         self.left, self.right, self.up, self.down = (False, False, False, False)
-        self.max_scroll = (1400, 1530)
+
+        self.max_scroll = max_scroll
 
     def update_selection(self, new_selection):
         self.selected_units = new_selection
