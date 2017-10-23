@@ -221,23 +221,19 @@ class Pathmap:
         # TODO: Cache chunks
         # TODO: Find large rectangular areas and draw straight paths
         # through them as additional nodes to make it look more natural
-        #frontier = []
-        #heapq.heappush(frontier, (first_node, 0))
-        frontier = PriorityQueue()
-        frontier.put(first_node, 0)
+        frontier = []
+        heapq.heappush(frontier, (0, first_node))
         came_from = {first_node: None}
         cost = {first_node: 0}
 
-        while not frontier.empty():
-            #current = heapq.heappop(frontier)[0]
-            current = frontier.get()
+        while len(frontier) > 0:
+            current = heapq.heappop(frontier)[1]
             if current == goal_node:
                 return unwind_came_from(goal_node, came_from)
             for next, next_additional_cost in self.get_neighbors(current):
                 total_next_cost = cost[current] + next_additional_cost 
                 if next not in cost or cost[next] > total_next_cost:
-                    #heapq.heappush(frontier, (next, total_next_cost))
-                    frontier.put(next, total_next_cost)
+                    heapq.heappush(frontier, (total_next_cost, next))
                     came_from[next] = current
                     cost[next] = total_next_cost
         return None # No path exists
@@ -250,19 +246,4 @@ def unwind_came_from(final_node, came_from):
         path.append(current)
         current = came_from[current]
     return path
-
-
-# Redblob's wrapper around heapq
-class PriorityQueue:
-    def __init__(self):
-        self.elements = []
-    
-    def empty(self):
-        return len(self.elements) == 0
-    
-    def put(self, item, priority):
-        heapq.heappush(self.elements, (priority, item))
-    
-    def get(self):
-        return heapq.heappop(self.elements)[1]
 
