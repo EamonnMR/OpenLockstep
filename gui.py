@@ -433,6 +433,12 @@ class GoalDrawSystem(ecs.DrawSystem):
 
 
 class PathDrawSystem(ecs.DrawSystem):
+    """ Tool for debugging the pathfinding and movement code.
+    Will show what the path a unit is currently following is.
+    Needs to be passed the gui (to know what unit is selected)
+    a sprite to draw, and the tile height/width to find the
+    locations of tiles to point out.
+    """
     def __init__(self, gui, sprite, tile_height, tile_width):
         self.criteria = ['path']
         self.gui = gui
