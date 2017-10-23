@@ -1,5 +1,5 @@
 import math
-from collections import deque
+import heapq
 
 from ecs import System, DrawSystem
 import graphics
@@ -71,7 +71,6 @@ class PathFollowSystem(System):
     def find_path(self, ent):
         path = self.pathmap.get_path_from_pos(ent.pos, ent.move_goal)
         if path:
-            print("path found")
             ent.path = path
         else: # No path found
             print("no path found")
@@ -164,21 +163,23 @@ class Pathmap:
         ]
         self.tileheight = tiledmap.tileheight
         self.tilewidth = tiledmap.tilewidth
+        self.diagonal = distance((0,0),(self.tilewidth, self.tileheight))
+        print(self.diagonal)
  
     def get_neighbors(self, node):
         x, y = node
-        print(node)
         if self.path_grid[y][x]:
-            return set([(nx, ny) for nx, ny in [
-                    # TODO: Add costs; diagonal is 2(sqrt(2)) iirc
-                    (x + 1, y),
-                    # (x + 1, y + 1),
-                    # (x + 1, y - 1),
-                    (x, y + 1),
-                    (x, y - 1),
-                    (x - 1, y),
-                    #(x - 1, y + 1),
-                    #(x - 1, y - 1),
+            return set([((nx, ny), cost) for nx, ny, cost in [
+                # This table represents each surrounding tile and
+                # the cost associated with it.
+                    (x + 1, y    , self.tilewidth),
+                    (x + 1, y + 1, self.diagonal),
+                    (x + 1, y - 1, self.diagonal),
+                    (x    , y + 1, self.tileheight),
+                    (x    , y - 1, self.tileheight),
+                    (x - 1, y    , self.tilewidth),
+                    (x - 1, y + 1, self.diagonal),
+                    (x - 1, y - 1, self.diagonal),
                 ]
                 if self.on_map((nx, ny)) and self.path_grid[ny][nx]
             ])
@@ -210,7 +211,6 @@ class Pathmap:
     def get_path_from_pos(self, position, destination):
 
         # From Red Blob's tut
-        # This is the simple bredth first search.
         first_node = self.closest_node(position)
         goal_node = self.closest_node(destination)
 
@@ -221,19 +221,25 @@ class Pathmap:
         # TODO: Cache chunks
         # TODO: Find large rectangular areas and draw straight paths
         # through them as additional nodes to make it look more natural
-        frontier = deque()
-        frontier.append(first_node)
-        came_from = {}
-        came_from[first_node] = None
+        #frontier = []
+        #heapq.heappush(frontier, (first_node, 0))
+        frontier = PriorityQueue()
+        frontier.put(first_node, 0)
+        came_from = {first_node: None}
+        cost = {first_node: 0}
 
-        while len(frontier) > 0:
-            current = frontier.popleft()
+        while not frontier.empty():
+            #current = heapq.heappop(frontier)[0]
+            current = frontier.get()
             if current == goal_node:
                 return unwind_came_from(goal_node, came_from)
-            for next in self.get_neighbors(current):
-                if next not in came_from:
-                    frontier.append(next)
+            for next, next_additional_cost in self.get_neighbors(current):
+                total_next_cost = cost[current] + next_additional_cost 
+                if next not in cost or cost[next] > total_next_cost:
+                    #heapq.heappush(frontier, (next, total_next_cost))
+                    frontier.put(next, total_next_cost)
                     came_from[next] = current
+                    cost[next] = total_next_cost
         return None # No path exists
 
 
@@ -243,7 +249,20 @@ def unwind_came_from(final_node, came_from):
     while current:
         path.append(current)
         current = came_from[current]
-    # path.reverse()
-    print(path)
     return path
+
+
+# Redblob's wrapper around heapq
+class PriorityQueue:
+    def __init__(self):
+        self.elements = []
+    
+    def empty(self):
+        return len(self.elements) == 0
+    
+    def put(self, item, priority):
+        heapq.heappush(self.elements, (priority, item))
+    
+    def get(self):
+        return heapq.heappop(self.elements)[1]
 
