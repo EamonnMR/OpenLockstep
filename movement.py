@@ -70,7 +70,7 @@ class PathFollowSystem(System):
 
     def find_path(self, ent):
         path = self.pathmap.get_path_from_pos(ent.pos, ent.move_goal)
-        if path:
+        if path is not None:
             ent.path = path
         else: # No path found
             print("no path found")
@@ -245,5 +245,10 @@ def unwind_came_from(final_node, came_from):
     while current:
         path.append(current)
         current = came_from[current]
+    if len(path) <= 2:
+        path = []
+    else:
+        path.pop()
+        path.pop(0)
     return path
 
