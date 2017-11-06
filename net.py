@@ -168,7 +168,7 @@ class Server:
         for con_id, client_con in self.client_cons.items():
             client_con.push_step(
                     Step(0, [
-                        commands.Handshake(con_id, start_locations)], 
+                        commands.Handshake(con_id, start_locations, self.settings['map'])], 
                     EMPTY_HASH)
             )
 

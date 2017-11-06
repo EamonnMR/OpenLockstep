@@ -67,11 +67,12 @@ class Ping(Command):
         self.position = position
 
 class Handshake(Command):
-    net_members = ['startlocs', 'your_id']
+    net_members = ['startlocs', 'your_id', 'map']
 
-    def __init__(self, your_id=0, startlocs={}):
+    def __init__(self, your_id=0, startlocs={}, map=''):
         self.startlocs = startlocs
         self.your_id = your_id
+        self.map = map
 
 
 class Move(Command):
@@ -135,12 +136,21 @@ class Stop(Command):
             clear_ai(unit)
 
 def clear_ai(ent):
-    # TODO: Add behavior things to this list
-    active_members = ['move_goal', 'attack_target']
+    ''' Removes AI state from an entity. If this isn't
+    working, it's possible that someone has added new
+    AI components and not added them to this list!'''
+    active_members = [
+            'move_goal',
+            'attack_target',
+            'path',
+            'path_complete',
+    ]
     for member in active_members:
         if member in ent:
             del ent[member]
-
+# Corresponds to commands in unit descriptions
+# TODO:  Obviate this with some sort of reflection
+# scheme?
 STR_COMMANDS = {
     'make': Make,
     'move': Move,
@@ -149,6 +159,8 @@ STR_COMMANDS = {
     'attackmove': AttackMove,
 }
 
+# What index this command is encoded as over the net.
+# TODO: Would it be possible to assign these automatically?
 INDEX_TO_COMMAND = {
     1: Ping,
     2: Handshake,
@@ -159,4 +171,6 @@ INDEX_TO_COMMAND = {
     7: AttackMove,
 }
 
+# An inverted list dict, so if 1: Ping, "Ping": 1
+# Thanks stackoverflow
 COMMAND_TO_INDEX = dict((item[1].__name__, bytes([item[0]])) for item in INDEX_TO_COMMAND.items())

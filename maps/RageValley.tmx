@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" width="50" height="50" tilewidth="40" tileheight="40">
+ <tileset firstgid="1" source="HardVaccum.tsx"/>
+ <layer name="Tile Layer 1" width="50" height="50">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAC9WaXU4UQRCAZxr1CqiRmBCWK8DiXzQLVxCMPvjDGWSNvLEH8Cx6AhMPYPQuwCJKdZjO1hZV3dUz3T3jw5eQYXamvqmqrpndGVVVNfIwA/aA9R7YCMSmJdbh2FTVU4HPJt5jApx0iH23gTr44rQ8A+4KPAl8VnKNdZkJseP4fXGmALtip5j62uwxfsnJuUyaaxzKC9cHxz3Fz+XH+WygeKnTUB243DiPTabWYh1OgTPEeSGXNbOorz3GA8cf6gXrsL+yvO1gZdmL8lHw5/BdE9wv68w65rY/DFwPzkHDFrANjBX73gsc3+fi88DXsI1DLCEPyWU34LFaIHZfjUp1tmZuzogheWjzo/Vw9VSilnJ5tO3n3HWGa0zj0XctaXLzP3vY3LiclPSY11V14eFP3T4ndO1N7YFjPzD+e9NXJt5LU1sxHtK1DsXe1SuVxzxBvFoeROaDPpNKHvNC8bf1oPtKHvcVDp9gn0eRTJnj2uM8JuefQlzjTB40bnpuDTuMG3ccOts5jyNzfW9tkWa59nw5OK2Xc8F52Ng1zwZ9sspsC9XVEEntkWNGc8ekx9F4nNULzgNxhNYsOss0cGs5XXPtszF9pvLlYwt66cgzBzVrr5Zv4PCl4WsdNzs0deWb5yk9fkPsPxt+BTzo7Mjl4eYIN9NSzHLuuTClh4vfzZEdhY9m5tO5hD0uIXd/gdcdPOgslOYgNzO7zE7NfS79jO317UC/l6aNhyYvQ/SwtfaPmRtD8Jg2teG7z8W8MTddXH1hctfalJxvrOhvSuh76tw54mYEhubhFnAbMRSP0HfU2MM6fCDrua+2KDnXMsmDqyfud8/Y2sI+HNiR1rsPqaa4eqK5GDW1dQflRFq/tOybxf3zy445umT62vcb9CFyiclLTrAD7mkuF5JLirykdKCxv4P/nwBva11eNL2f04GrI+swA77D3+8FD+dCe6akC+1r6nEIsfyowh6cTykXTV+/gH0mDc8VHg733onrmZxQB2mNbQP3/kwpYt7zuQKGga6nECcAAA==
+  </data>
+ </layer>
+ <objectgroup name="preplaced" width="50" height="50">
+  <object name="Player 0 Start" type="startloc" x="997" y="166" width="79" height="53"/>
+  <object name="Player 1 Start" type="startloc" x="829" y="1781" width="110" height="77"/>
+  <object name="o1" type="wellhead" x="650" y="1806" width="37" height="32"/>
+  <object name="o2" type="wellhead" x="1086" y="1802" width="29" height="32"/>
+  <object name="o3" type="wellhead" x="818" y="154" width="36" height="39"/>
+  <object name="o4" type="wellhead" x="1189" y="155" width="63" height="35"/>
+  <object name="o5" type="wellhead" x="843" y="1002" width="30" height="29"/>
+  <object name="o6" type="wellhead" x="1033" y="996" width="38" height="32"/>
+  <object name="o7" type="wellhead" x="1217" y="1005" width="52" height="35"/>
+  <object name="O8" type="wellhead" x="171" y="1605" width="40" height="33"/>
+  <object name="O9" type="wellhead" x="1485" y="1603" width="40" height="33"/>
+  <object name="o10" type="wellhead" x="1644" y="357" width="52" height="42"/>
+  <object name="o11" type="wellhead" x="146" y="287" width="44" height="55"/>
+ </objectgroup>
+</map>

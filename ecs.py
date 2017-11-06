@@ -53,10 +53,10 @@ class EntityManager:
 
         return state_hash
     
-    def draw(self):
+    def draw(self, offset):
         # This should have no side effects
         for system in self.draw_systems:
-            system.draw(self.ents)
+            system.draw(self.ents, offset)
 
 
     def add_ent(self, ent):
@@ -70,7 +70,6 @@ class EntityManager:
     def filter(self, filter_id, **kwargs):
         return self.filters[filter_id].apply(self.ents, kwargs)
 
-    # TODO: Add system, add filter, remove, etc
     def add_draw_system(self, new_draw_system, index=None):
         if index:
             self.draw_systems.insert(index, new_draw_system)
@@ -90,7 +89,19 @@ class EntityManager:
             self.filters[type(new_filter).__name__] = new_filter
 
     def __getitem__(self, id):
+        ''' If you do ecs[id] you get the end. Convenience. ''' 
         return self.ents[id]
+
+    def get_system(self, classname):
+        ''' Gets a system, if available, by class name.
+        This lets you, for example, put additional data in a
+        system during a handshake. Should probably not be used
+        during game because it's not fast. If fast becomes a
+        need, we should make a map of systems by classname.
+        '''
+        for system in self.systems:
+            if type(system).__name__ == classname:
+                return system
 
 
 class Filter:
@@ -144,19 +155,19 @@ class DrawSystem:
     def __init__(self):
         self.criteria = []
 
-    def draw(self, unfiltered_list):
+    def draw(self, unfiltered_list, offset):
         ''' This is called with a list of all of the ents. If the system
         needs filtering beyond checking criteria, override this method.'''
         self.draw_all([ent for ent in unfiltered_list.values()
-                if all([comp in ent for comp in self.criteria])])
+                if all([comp in ent for comp in self.criteria])], offset)
 
-    def draw_all(self, ents):
+    def draw_all(self, ents, offset):
         ''' This is called on all ents that meet criteria. Use this to
         do draws that involve multiple entities '''
         for ent in ents:
-            self.draw_individual(ent)
+            self.draw_individual(ent, offset)
 
-    def draw_individual(self, ent):
+    def draw_individual(self, ent, offset):
         '''Called for each ent that meets the criteria. Use this for
         simple drawing, such as drawing a sprite for each unit.'''
         pass
@@ -176,10 +187,8 @@ class Entity(dict):
     a dict of the components you'd like in and it'll just
     work.
     
-    Ensure that components all implement a to_string function,
-    otherwise there will be issues because the plan is to use
-    stringified components as the basis for the hashes that will
-    determine if the states are locked in.
+    Ensure that all components implement .to_string because
+    that is how sync is ensured.
 
     '''
 

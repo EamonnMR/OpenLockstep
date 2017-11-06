@@ -50,13 +50,13 @@ class SpriteDrawSystem(ecs.DrawSystem):
         self.screen = screen
         self.criteria = ['pos', 'sprite']
 
-    def draw_individual(self, ent):
+    def draw_individual(self, ent, offset):
         frame = 0
         if 'dir' in ent:
             frame = ent.dir
         if 'frame' in ent:
             frame = ent.frame
-        self.sprites[ent.sprite].draw(ent.pos[0], ent.pos[1], frame, self.screen)
+        self.sprites[ent.sprite].draw(ent.pos[0] - offset[0], ent.pos[1] - offset[1], frame, self.screen)
 
 class ExplosionAnimationSystem(ecs.System):
     def __init__(self, data):

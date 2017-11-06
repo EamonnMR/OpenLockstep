@@ -4,9 +4,12 @@ import pygame
 
 import ecs
 import commands
+import util 
 
+SCROLL_SPEED = 10
+SCROLL_MARGIN = 15
 class GUI:
-    def __init__(self, ecs, mouse_spr, screen, data, player_id):
+    def __init__(self, ecs, mouse_spr, screen, data, player_id, parent, max_scroll):
         self.mouse_spr = mouse_spr
         self.mouse = NormalMouse(mouse_spr, self)
         self.screen = screen
@@ -16,6 +19,13 @@ class GUI:
         self.active_hotkeys = {}
         self.data = data
         self.player_id = player_id
+        self.parent = parent # TODO: Clean up abstraction
+        # Scrolling stuff:
+
+        self.global_keys = [pygame.K_DOWN, pygame.K_UP, pygame.K_LEFT, pygame.K_RIGHT]
+        self.left, self.right, self.up, self.down = (False, False, False, False)
+
+        self.max_scroll = max_scroll
 
     def update_selection(self, new_selection):
         self.selected_units = new_selection
@@ -39,7 +49,7 @@ class GUI:
         return [self.ecs[id] for id in self.selected_units]
 
     def handle_event(self, event):
-        ''' Returns commands if any'''
+        ''' Returns commands if any, new offset'''
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
                 return self.mouse.left_up()
@@ -51,31 +61,107 @@ class GUI:
                 return self.mouse.left_down()
             elif event.button == 3:
                 return self.mouse.right_down()
-        elif event.type == pygame.KEYDOWN:
-            # This is fine as an MVP but I think that determining the order
-            # set at selection-time might be saner.
-            hotkey = chr(event.key)
-            if hotkey in self.active_hotkeys:
-                order = self.active_hotkeys[hotkey]
-                if "selector" in order:
-                    self.mouse = SELECTORS[order['selector']](self.mouse_spr, self, order)
-                else:
-                    return commands.get_mapped(order['cmd'])(
-                            ids=self.selected_units,
-                            **(order['args'] if 'args' in order else {})
-                    )
             else:
                 return None
-    
+
+        elif event.type == pygame.KEYUP:
+            return self.global_key_up(event.key)
+
+        elif event.type == pygame.KEYDOWN:
+            if event.key in self.global_keys:
+                return self.global_key_down(event.key)
+            else:
+                hotkey = chr(event.key)
+                if hotkey in self.active_hotkeys:
+                    order = self.active_hotkeys[hotkey]
+                    if "selector" in order:
+                        self.mouse = SELECTORS[order['selector']](
+                                self.mouse_spr, self, order)
+                        return None
+                    else:
+                        return commands.get_mapped(order['cmd'])(
+                                ids=self.selected_units,
+                                **(order['args'] if 'args' in order else {})
+                        )
+                else:
+                    return None
+        else:
+            return None
 
     def draw(self):
         # TODO: Draw gui stuff here
         self.mouse.draw()
 
-    def update(self):
-        pass
+    def get_mouse_world_pos(self):
+        ''' Get the world-space coordinates for the mouse's current position '''
+        screen_pos = pygame.mouse.get_pos()
+        return screen_pos[0] + self.parent.offset[0], screen_pos[1] + self.parent.offset[1]
+
+    def get_screen_pos(self, pos):
+        ''' Transform a worldspace coordinate into a screen space coordinate '''
+        return self.pos[0] - self.parent.offset[0], self.pos[1] - self.parent.offset[1]
+
+    def global_key_down(self, key):
+        if key == pygame.K_DOWN:
+            self.down = True
+        elif key == pygame.K_UP:
+            self.up = True
+        elif key == pygame.K_LEFT:
+            self.left = True
+        elif key == pygame.K_RIGHT:
+            self.right = True
+
+        return None
+
+    def global_key_up(self, key):
+        if key == pygame.K_DOWN:
+            self.down = False
+        elif key == pygame.K_UP:
+            self.up = False
+        elif key == pygame.K_LEFT:
+            self.left = False
+        elif key == pygame.K_RIGHT:
+            self.right = False
+        
+        return None
+
+    def get_offset(self):
+        # TODO: Check for diagonals, in that case do SCROLL_SPEED * SRQ 2 in each dir
+        m_right, m_left, m_up, m_down = self.mouse.scroll_update()
+
+        left = self.left or m_left
+        right = self.right or m_right
+        up = self.up or m_up
+        down = self.down or m_down
+
+        x, y = self.parent.offset
+        if left and not right:
+            x -= SCROLL_SPEED
+        elif right and not left:
+            x += SCROLL_SPEED
+
+        if up and not down:
+            y -= SCROLL_SPEED
+        elif down and not up:
+            y += SCROLL_SPEED
+
+        max_x, max_y = self.max_scroll
+
+        if x < 0:
+            x = 0
+        elif x > max_x:
+            x = max_x
+
+        if y < 0:
+            y = 0
+        elif y > max_y:
+            y = max_y
+
+        return int(x), int(y)
+
 
 class MouseMode:
+    ''' Implementations should have a 'parent' member which points to a gui '''
     def draw(self):
         pass
 
@@ -94,17 +180,67 @@ class MouseMode:
     def left_down(self):
         pass
 
-class CrosshairsMouse(MouseMode):
+    def scroll_update(self):
+        x, y = pygame.mouse.get_pos()
+        return self.get_dir(x, y)
+
+    def get_dir(self, x, y):
+        right, left, up, down = (False, False, False, False)
+        if x - SCROLL_MARGIN <= 0:
+            left = True
+        elif x + SCROLL_MARGIN >= self.parent.parent.screen_size[0]:
+            right = True
+        if y - SCROLL_MARGIN <= 0:
+            up = True
+        elif y + SCROLL_MARGIN >= self.parent.parent.screen_size[1]:
+            down = True
+
+        return right, left, up, down
+
+class ScrollerMouse(MouseMode):
+    def __init__(self, sprite, parent, previous_mouse):
+        self.sprite = sprite
+        self.parent = parent
+        self.sprite_frame = 9
+    
+    def draw(self):
+        x, y = pygame.mouse.get_pos()
+        dir = self.get_dir(x, y)
+        frame = self.sprite_frame
+        if any(dir):
+            frame = {
+                util.RIGHT: 0,
+                util.BOTTOM_RIGHT: 1,
+                util.DOWN: 2,
+                util.BOTTOM_LEFT: 3,
+                util.LEFT: 4,
+                util.TOP_LEFT: 5,
+                util.UP: 6,
+                util.TOP_RIGHT: 7,
+            }.get(dir, self.sprite_frame)
+
+            # Clamp to sides of screen
+            right, left, up, down = dir
+            if right:
+                x = self.parent.parent.screen_size[0] - self.sprite.width
+            elif left:
+                x = 0
+            if down:
+                y = self.parent.parent.screen_size[1] - self.sprite.height
+            elif up:
+                y = 0
+
+        self.sprite.draw(x, y, frame, self.parent.screen)
+
+
+class CrosshairsMouse(ScrollerMouse):
     def __init__(self, sprite, parent, order):
         pygame.mouse.set_visible(False)
         self.parent = parent
         self.sprite = sprite
         self.order = order
+        self.sprite_frame = 13
     
-    def draw(self):
-        x, y = pygame.mouse.get_pos()
-        self.sprite.draw(x, y, 13, self.parent.screen)
-
     def set_normal_mouse(self):
         self.parent.mouse = NormalMouse(self.parent.mouse_spr, self.parent)
 
@@ -112,7 +248,7 @@ class CrosshairsMouse(MouseMode):
         self.set_normal_mouse()
 
         # See if we've clicked on a unit
-        location = pygame.mouse.get_pos()
+        location = self.parent.get_mouse_world_pos()
 
         clicked = self.parent.ecs.filter('SpriteClickedFilter',
                 point=location)
@@ -152,7 +288,7 @@ class CrosshairsUnitPicker(CrosshairsMouse):
         return self.construct_command(command, at=unit)
 
 
-class NormalMouse(MouseMode):
+class NormalMouse(ScrollerMouse):
     def __init__(self, sprite, parent):
         pygame.mouse.set_visible(False)
         self.parent = parent
@@ -160,6 +296,7 @@ class NormalMouse(MouseMode):
         self.dragging = False
         self.initial_drag_pos = None
         self.selection_box = None
+        self.sprite_frame = 11
 
     def draw(self):
         x, y = pygame.mouse.get_pos()
@@ -171,17 +308,18 @@ class NormalMouse(MouseMode):
                              (200, 200, 250),
                              self.selection_box, 
                              1)
-        self.sprite.draw(x, y,
-                11 if self.dragging else 12, 
-                # TODO: Idea: sprites with named frames?
-                self.parent.screen)
+        self.sprite_frame = 11 if self.dragging else 12
+
+        super(NormalMouse, self).draw()
+
     
     def left_up(self):
         if self.dragging:
             self.dragging = False
             # Logic to determine what ends up being selected
             
-            units_in_rect_ids = self.parent.ecs.filter('RectFilter', rect=self.selection_box)
+            units_in_rect_ids = self.parent.ecs.filter('RectFilter',
+                    rect=self.selection_box.move(self.parent.parent.offset[0], self.parent.parent.offset[1]))
             
             units_in_rect = [self.parent.ecs[id] for id in units_in_rect_ids]
             if len(units_in_rect) == 1 or all(
@@ -209,7 +347,7 @@ class NormalMouse(MouseMode):
             # TODO: Implement 'unit_set' type - iterable but also features a 'filter' option?
             return commands.Move(ids=[
                 unit.id for unit in units if 'orders' in unit and 'move' in unit.orders],
-                    to=pygame.mouse.get_pos())
+                    to=self.parent.get_mouse_world_pos())
 
     def _update_selection_box(self):
         ix, iy = self.initial_drag_pos
@@ -271,14 +409,53 @@ class SelectionDrawSystem(ecs.DrawSystem):
         self.gui = gui
         self.sprite = sprite
 
-    def draw_all(self, ents):
+    def draw_all(self, ents, offset):
         for ent in ents:
             if ent.id in self.gui.selected_units:
-                self.sprite.draw(x=ent.pos[0], y=ent.pos[1],
+                self.sprite.draw(x=ent.pos[0] - offset[0], y=ent.pos[1] - offset[1],
                         frame=0 if ent.owner and
+                            # TODO: Why does this break for player 0?
                             ent.owner == self.gui.player_id 
                             else 1,
                         screen=self.gui.screen)
+
+class GoalDrawSystem(ecs.DrawSystem):
+    def __init__(self, gui, sprite):
+        self.criteria = ['move_goal']
+        self.gui = gui
+        self.sprite = sprite
+
+    def draw_all(self, ents, offset):
+        for ent in ents:
+            if ent.id in self.gui.selected_units:
+                self.sprite.draw(x=ent.move_goal[0] - offset[0],
+                        y = ent.move_goal[1] - offset[1], frame=8, screen=self.gui.screen)
+
+
+class PathDrawSystem(ecs.DrawSystem):
+    """ Tool for debugging the pathfinding and movement code.
+    Will show what the path a unit is currently following is.
+    Needs to be passed the gui (to know what unit is selected)
+    a sprite to draw, and the tile height/width to find the
+    locations of tiles to point out.
+    """
+    def __init__(self, gui, sprite, tile_height, tile_width):
+        self.criteria = ['path']
+        self.gui = gui
+        self.sprite = sprite
+        self.tile_height = tile_height
+        self.tile_width = tile_width
+
+    def draw_all(self, ents, offset):
+        for ent in ents:
+            if ent.id in self.gui.selected_units:
+                for node in ent.path:
+                    self.sprite.draw(
+                            x=(node[0] * self.tile_width) - offset[0],
+                            y=(node[1] * self.tile_height) - offset[1],
+                            frame=9,
+                            screen=self.gui.screen
+                        )
 
 SELECTORS = {
         'crosshairs': CrosshairsMouse,

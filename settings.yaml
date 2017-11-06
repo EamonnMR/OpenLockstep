@@ -1,3 +1,5 @@
 screen_size: [640, 480]
 assets: assets
 default_faction: tan_faction
+map: maps/RageValley.tmx
+

@@ -34,10 +34,12 @@ if __name__ == "__main__":
     settings.update(yaml.load(args.settings))
     data = DataLoader(settings['assets'])
     data.preload()
+
     ent_manager = ecs.EntityManager(
         systems=[
             graphics.ExplosionAnimationSystem(data),
-            movement.MoveSystem(),
+            movement.FlySystem(),
+            movement.PathFollowSystem(), #FIXME: We need tile dimensions earlier
             combat.HitPointSystem(),
             combat.CooldownSystem(),
         ],
@@ -57,4 +59,3 @@ if __name__ == "__main__":
         net.Server(settings, args.port, host=args.host,
                 client_count=args.clients,
                 ent_manager=ent_manager).run()
-
