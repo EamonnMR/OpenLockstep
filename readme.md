@@ -1,6 +1,6 @@
 # OpenLockstep: Networked RTS engine in python
 
-The basic idea for this project is the twin concepts of an entity/component game arcatecture and a lockstep network model (as described in the classic paper [1500 Archers on a 28.8](https://www.gamasutra.com/view/feature/131503/1500_archers_on_a_288_network_.php). It's data driven and attempts to mess with the data as little as possible so that it's obvious how you get from YAML to game entities.
+The basic idea for this project is the twin concepts of an entity/component game arcatecture and a lockstep network model (as described in the classic paper [1500 Archers on a 28.8](https://www.gamasutra.com/view/feature/131503/1500_archers_on_a_288_network_.php). It's data driven and attempts to mess with the data as little as possible so that it's obvious how you get from YAML to game entities. The goal, beyond playing with those concepts (and maybe ending up with a playable PVP RTS) is to leave a foundation that anyone can pick up and use to experiment with RTS concepts - it's a type of game I very much enjoy, and one that I'd like to see continued innovation in.
 
 
 ## Installation:
@@ -29,7 +29,7 @@ Remote clients can connect with the `--port` and`--host` arguments.
 
 ### Graphics
 
-The graphics are DanC's classic Tyrian and HardVaccum collections, under the Lost Garden liscense. Much of it is re-used from tweaks I made for Scandium, including the double-sized pixels and the tiled map tileset. I'm a huge fan of these graphics. They're not placeholders-they're final art.
+The graphics are DanC's classic [Tyrian](http://www.lostgarden.com/2007/04/free-game-graphics-tyrian-ships-and.html) and [HardVaccum](http://www.lostgarden.com/2005/03/game-post-mortem-hard-vacuum.html) collections, under [CC BY 3](https://creativecommons.org/licenses/by-sa/3.0/). Much of it is re-used from tweaks I made for [Scandium](http://github.com/eamonnmr/scandium_rts), including the double-sized pixels and the tiled map tileset. I'm a huge fan of these graphics. They're not placeholders-they're final art.
 
 ### Tech
 
