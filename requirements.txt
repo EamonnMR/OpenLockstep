@@ -2,4 +2,5 @@ pygame
 pyyaml
 pytmx
 pyscroll
-
+ujson
+toml

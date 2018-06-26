@@ -1,4 +1,4 @@
-import json
+import ujson
 
 
 class UnknownCommand(Exception):
@@ -46,7 +46,7 @@ class Command:
 
     def serialize(self):
         cls = type(self)
-        return json.dumps(
+        return ujson.dumps(
             {k: self.__dict__[k] for k in cls.net_members}
         ).encode('utf-8')
     
@@ -54,7 +54,7 @@ class Command:
     def deserialize(cls, byte_string):
         new_instance = cls()
         new_instance.__dict__.update(
-            {k:  v for k, v in json.loads(
+            {k:  v for k, v in ujson.loads(
                 byte_string.decode('utf-8')).items()
                 if k in cls.net_members})
         return new_instance

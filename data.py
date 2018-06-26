@@ -1,9 +1,10 @@
-import json
+import ujson
 import os
 import copy
 
 import pygame
 import yaml
+import toml
 
 from graphics import Sprite
 from ecs import Entity
@@ -20,13 +21,15 @@ class DataLoader:
         pass
 
     def _get_cfg(self, name):
-        ''' Gets json from a file in the data dir '''
+        ''' Gets data from a file in the data dir '''
         # TODO: Add support for yaml, etc.
         text = open(self._fname(name))
         if name.endswith('.json'):
             return json.load(text)
         elif name.endswith('.yml') or name.endswith('.yaml'):
-            return yaml.load(text)
+            return yaml.safe_load(text)
+        elif name.endswith('.toml'):
+            return toml.load(text)
         else:
             print('unknown file type: ' + name)
             #raise UnknownFileTypeException
