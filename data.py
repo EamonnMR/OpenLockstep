@@ -26,7 +26,7 @@ class DataLoader:
         if name.endswith('.json'):
             return json.load(text)
         elif name.endswith('.yml') or name.endswith('.yaml'):
-            return yaml.load(text)
+            return yaml.safe_load(text)
         else:
             print('unknown file type: ' + name)
             #raise UnknownFileTypeException
