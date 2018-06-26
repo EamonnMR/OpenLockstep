@@ -3,3 +3,4 @@ pyyaml
 pytmx
 pyscroll
 ujson
+toml
