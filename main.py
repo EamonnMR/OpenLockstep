@@ -15,6 +15,7 @@ import ecs
 import movement
 import combat
 import graphics
+import cProfile
 from data import DataLoader
 
 if __name__ == "__main__":
@@ -27,6 +28,7 @@ if __name__ == "__main__":
     parser.add_argument('--settings_file', type=str, default='settings.yaml')
     parser.add_argument('--settings', type=str, default='{}')
     parser.add_argument('--player_id', type=int, default=0)
+    parser.add_argument('--profile', action='store_true')
 
     args = parser.parse_args()
 
@@ -54,8 +56,17 @@ if __name__ == "__main__":
     if args.client:
         screen = pygame.display.set_mode(settings['screen_size'])
         data.load()
-        game.Game(settings, args, ent_manager, data, screen).start()
+        client = game.Game(settings, args, ent_manager, data, screen)
+        if args.profile:
+            cProfile.run('client.start()')
+        else:
+            client.start()
     elif args.server:
-        net.Server(settings, args.port, host=args.host,
+        server = net.Server(settings, args.port, host=args.host,
                 client_count=args.clients,
-                ent_manager=ent_manager).run()
+                ent_manager=ent_manager)
+        if args.profile:
+            cProfile.run('server.run()')
+        else:
+            server.run()
+
