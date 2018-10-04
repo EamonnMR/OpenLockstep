@@ -13,7 +13,7 @@ import graphics
 import movement
 
 TIMER_EVENT = pygame.USEREVENT + 1
-STEP_LENGTH = 250 # ms (250 is 4 times per second)
+STEP_LENGTH = 100 # ms (250 is 4 times per second)
 class Game:
     '''
     Calling "start" runs the game loop. Inside the game loop, the event loop

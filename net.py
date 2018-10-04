@@ -6,10 +6,10 @@ import math
 
 import commands
 
-STEP_AHEAD = 1
-INITIAL_STEP = 1
+STEP_AHEAD = 10  # Latentcy compensation
+INITIAL_STEP = STEP_AHEAD
 HANDSHAKE_STEP = 0
-EMPTY_HASH = b'0'.join([b'' for x in range(0,31)]) # 32 zeroes
+EMPTY_HASH = b"".zfill(32) # 32 zeroes
 
 def get_socket():
     return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
