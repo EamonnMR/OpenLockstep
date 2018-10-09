@@ -1,5 +1,6 @@
 import sys
 import math
+from datetime import datetime
 
 import pygame
 from pytmx.util_pygame import load_pygame
@@ -13,7 +14,7 @@ import graphics
 import movement
 
 TIMER_EVENT = pygame.USEREVENT + 1
-STEP_LENGTH = 100 # ms (250 is 4 times per second)
+STEP_LENGTH = 250 # ms (250 is 4 times per second)
 class Game:
     '''
     Calling "start" runs the game loop. Inside the game loop, the event loop
@@ -40,6 +41,7 @@ class Game:
         self.grabbed = False
         self.pathmap = []
         self.settings = settings
+        self.last_step_start = datetime.now()
 
     def do_handshake(self):
         hs_step = self.client.block_until_get_step(net.HANDSHAKE_STEP)
@@ -153,6 +155,9 @@ class Game:
     def advance_step(self):
         # Transmit accumulated commands then clear list
         self.client.send(self.step, self.command_list, self.state_hash)
+        self.step_time = datetime.now() - self.last_step_start 
+        print("Step Time: {}".format(self.step_time))
+        self.last_step_start = datetime.now()
         self.command_list = [] # Set-to-new-empty, not delete
 
         # Wait for the server
