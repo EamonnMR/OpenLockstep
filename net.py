@@ -6,7 +6,7 @@ import math
 
 import commands
 
-STEP_AHEAD = 10  # Latentcy compensation
+STEP_AHEAD = 3  # Latentcy compensation
 INITIAL_STEP = STEP_AHEAD
 HANDSHAKE_STEP = 0
 EMPTY_HASH = b"".zfill(32) # 32 zeroes

@@ -41,7 +41,9 @@ class Game:
         self.grabbed = False
         self.pathmap = []
         self.settings = settings
-        self.last_step_start = datetime.now()
+        self.benchmark = args.benchmark
+        if self.benchmark:
+            self.last_step_start = datetime.now()
 
     def do_handshake(self):
         hs_step = self.client.block_until_get_step(net.HANDSHAKE_STEP)
@@ -155,19 +157,42 @@ class Game:
     def advance_step(self):
         # Transmit accumulated commands then clear list
         self.client.send(self.step, self.command_list, self.state_hash)
-        self.step_time = datetime.now() - self.last_step_start 
-        print("Step Time: {}".format(self.step_time))
-        self.last_step_start = datetime.now()
         self.command_list = [] # Set-to-new-empty, not delete
 
         # Wait for the server
         # See net for why this should not lag the game
         # TODO: Handle lag more gracefully (show "lag" screen?)
-        self.execute_step(self.client.block_until_get_step(self.step))
-        self.state_hash = self.entities.do_step()
-        # TODO: Game logic goes here
-        self.step += 1 # Only advance after we've recieved a new step
+        if self.benchmark:
+            wait_start = datetime.now()
+            step = self.client.block_until_get_step(self.step)
+            wait_time = datetime.now() - wait_start
+            exec_start = datetime.now()
+            self.execute_step(step)
+            exec_time = datetime.now() - exec_start
+            do_start = datetime.now()
+            self.state_hash = self.entities.do_step()
+            do_time = datetime.now() - do_start
+        else:
+            self.execute_step(self.client.block_until_get_step(self.step))
+            self.state_hash = self.entities.do_step()
 
+        # TODO: Game logic goes here
+        
+        if self.benchmark:
+            time = datetime.now()
+            self.step_time = time - self.last_step_start 
+            self.last_step_start = datetime.now()
+            print('''Step {} Total Time: {}
+                    {}: Waiting for step
+                    {}: Execute Step
+                    {}: Do Step'''.format(
+                        self.step,
+                        self.step_time,
+                        wait_time,
+                        exec_time,
+                        do_time))
+        self.step += 1 # Only advance after we've recieved a new step
+        
     def execute_step(self, step):
         for command in step.commands:
             command.execute(self.entities, self.data)

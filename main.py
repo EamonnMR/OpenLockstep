@@ -29,6 +29,7 @@ if __name__ == "__main__":
     parser.add_argument('--settings', type=str, default='{}')
     parser.add_argument('--player_id', type=int, default=0)
     parser.add_argument('--profile', action='store_true')
+    parser.add_argument('--benchmark', action='store_true')
 
     args = parser.parse_args()
 
