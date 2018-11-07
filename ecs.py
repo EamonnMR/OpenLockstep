@@ -190,6 +190,10 @@ class Entity(dict):
     Ensure that all components implement .to_string because
     that is how sync is ensured.
 
+    Also note that I tried SimpleNamespace which is nice not
+    for this case because it does not implement 'in' so it
+    would be sort of a wash.
+
     '''
 
 
