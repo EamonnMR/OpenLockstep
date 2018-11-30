@@ -3,16 +3,18 @@ import argparse
 import threading
 import queue # Use Async io Queue?
 import math
+import io
 
 import commands
 
+HASH_SIZE = 32  # Number of bytes of an MD5 hash 
 STEP_AHEAD = 3  # Latentcy compensation
 INITIAL_STEP = STEP_AHEAD
 HANDSHAKE_STEP = 0
-EMPTY_HASH = b"".zfill(32) # 32 zeroes
+EMPTY_HASH = b"".zfill(HASH_SIZE) # 32 zeroes
 
 def get_socket():
-    return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    return socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 
 class Step:
@@ -37,41 +39,50 @@ class Messenger:
     for example, we need to make sure that when we send an encoded message
     we send the length and the other end can expect.
     
-    This wrapper should also help if you need to rewrite everything as UDP - 
-    this is where you'd implement the reliability.
-
     TODO: Make send and recieve ints use more bits, it'll make life easier.
     UPDATE: This is a major pain to do
     '''
-    def send_step(self, step):
-        # First message: Unique ID of the step (as a string because
-        # it will be a very large number. Might need to use bignum.
-        self.send_bytes(str(step.uid).encode('utf-8'))
+    def send_step(self, step):        self.send_packet(self.get_datagram(step))
 
-        # Second message (int): number of commands
-        self.send_int(len(step.commands))
-
-        # Remaining messages: send serialized commands
-        for command in step.commands:
-            self.send_bytes(commands.serialize(command))
-        
-        # Send state hash
-        self.send_bytes(step.state_hash)
+    def send_packet(packet):
+        # TODO: For reliability, save to-send packets in a hash
+        self.socket.sendto(packet, self.connection_info)
 
     def get_step(self):
         # This mirrors the sending code closely
+        return self.parse_datagram(self.socket.rcvfrom(MAX_PACKET_BYTES)[0])
+    
+    def get_datagram(step):
+        stream = io.BytesIO()
+        # First message: Unique ID of the step (as a string because
+        # it will be a very large number. Might need to use bignum.
+        self.send_bytes(str(step.uid).encode('utf-8'), stream)
+
+        # Second message (int): number of commands
+        self.send_int(len(step.commands), stream)
+
+        # Remaining messages: send serialized commands
+        for command in step.commands:
+            self.send_bytes(commands.serialize(command), stream)
+        
+        # Send state hash
+        self.send_fixed(step.state_hash, stream)
+
+        return stream.getvalue()
+
+    def parse_datagram(datagram_bytes):
+        stream = io.BytesIO(datagram_bytes)
         return Step(
-            int(self.get_bytes().decode('utf-8')), # Get step ID
+            int(self.get_bytes(stream).decode('utf-8')), # Get step ID
             [
-                commands.deserialize(self.get_bytes()) # Get count then each
-                for counter in range(self.get_int())   # sent command
+                commands.deserialize(self.get_bytes(stream)) # Get count then each
+                for counter in range(self.get_int(stream))  # sent command
             ], 
-            self.get_bytes()                           # get state hash
+            self.get_fixed(stream, HASH_SIZE)                # get state hash
         )
 
     class Disconnect(Exception):
         ''' Indicates that the connection is closed '''
-        pass
 
     def __init__(self, open_socket):
         self.socket = open_socket
@@ -81,32 +92,44 @@ class Messenger:
         self.reciever = Messenger.Reciever(self)
         self.sender.start()
         self.reciever.start()
+        self.connection_info = ("127.0.0.1", 8080) # TODO: Not... this
 
-    def send_bytes(self, msg):
-        self.send_int(len(msg))
-        self.socket.send(msg)
+    def send_bytes(self, msg, stream):
+        self.send_int(len(msg), stream)
+        stream.write(msg)
 
-    def send_int(self, integer): # TODO: Make this a bigger int (uglier code)
-        self.socket.send(bytes([integer]))
+    def send_fixed(self, msg, stream):
+        '''This assumes that whatever is receiving it on the other end knows how long it
+        supposed to be'''
+        stream.write(msg)
 
-    def get_int(self):
-        byte = self.socket.recv(1)
+    def send_int(self, integer, stream): # TODO: Make this a bigger int (uglier code)
+        stream.write(bytes([integer]))
+
+    def get_int(self, stream):
+        # TODO: This is gross enough as it is, but if we want bigger ints it gets a whole
+        # lot harder.
+        byte = stream.read(1)
         if byte:
             return ord(byte)
         else:
+            print('Could not read int from {}'.format(stream))
             raise Messenger.Disconnect()
 
 
-    def get_bytes(self):
-        length = self.get_int()
+    def get_bytes(self, stream):
+        length = self.get_int(stream)
         if length:
-             msg = self.socket.recv(length)
-             if len(msg) != length:
-                 raise Messenger.Disconnect()
-             else:
-                 return msg
+            return self.get_fixed(stream, length)
         else:
             return b''
+
+    def get_fixed(self, stream, length):
+        msg = stream.read(length)
+        if len(msg) != length:
+            raise Messenger.Disconnect()
+        else:
+            return msgead(length)           
 
     class SubThread(threading.Thread):
         def __init__(self, parent):
@@ -149,7 +172,7 @@ class Server:
         self.settings = settings
 
     def run(self):
-        self.socket.listen(self.listen)
+        # self.socket.listen(self.listen)
         
         # Create connection objects as connections appear
         while len(self.client_cons) < self.client_count:
@@ -233,7 +256,6 @@ class Server:
         return start_locations
 
 
-
 class Client():
     def __init__(self, host, port):
         socket = get_socket()
@@ -261,3 +283,4 @@ class Client():
                 step = self.messenger.pull_step()
                 if step:
                     self.steps[step.uid] = step
+
