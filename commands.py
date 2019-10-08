@@ -135,6 +135,8 @@ class Stop(Command):
         for unit in [ecs[id] for id in self.ids]:
             clear_ai(unit)
 
+
+# Actual shared behavior functions:
 def clear_ai(ent):
     ''' Removes AI state from an entity. If this isn't
     working, it's possible that someone has added new
