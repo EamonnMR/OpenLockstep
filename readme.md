@@ -9,6 +9,8 @@ Like most Python projects, you can install the dependancies like this:
 
 You should probably do this in a python 3 [venv](http://docs.python-guide.org/en/latest/dev/virtualenvs/).
 
+See below for a more in-depth installation guide
+
 
 # Running OLS
 
@@ -34,4 +36,21 @@ The graphics are DanC's classic [Tyrian](http://www.lostgarden.com/2007/04/free-
 ### Tech
 
 OLS is written in  Python 3. Graphics are displayed with [pygame](http://pygame.org). Yaml is parsed with [pyyaml](http://pyyaml.org/wiki/PyYAML). I didn't want to focus on tile-based game stuff so I'm using some libraries-maps are created in [Tiled](http://www.mapeditor.org/) loaded with [PyTMX](https://github.com/bitcraft/PyTMX) and drawn with [pyscroll](https://github.com/bitcraft/pyscroll). I followed Red Blob Games' pathfinding [tutorial](https://www.redblobgames.com/pathfinding/a-star/introduction.html) for the pathfinding.
+
+### In-Depth Installation Guide
+
+Install Pyenv
+https://github.com/pyenv/pyenv
+
+Install Python 3.8.0
+`pyenv install 3.8.0`
+
+Create Python 3.8.0 venv
+`virtualenv -p /home/eamonn/.pyenv/versions/3.8.0/bin/python venv && source venv/bin/activate`
+
+Install SDL deps (https://stackoverflow.com/a/15368766)
+`sudo apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev python-openssl git`
+
+Install dependencies 
+`pip install -r requirements.txt`
 
