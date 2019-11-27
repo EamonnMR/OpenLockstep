@@ -12,6 +12,9 @@ STEP_AHEAD = 3  # Latentcy compensation
 INITIAL_STEP = STEP_AHEAD
 HANDSHAKE_STEP = 0
 EMPTY_HASH = b"".zfill(HASH_SIZE) # 32 zeroes
+MAX_PACKET_BYTES = 1024
+
+CLIENT_IPS = {0: '127.0.0.1'}
 
 def get_socket():
     return socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -44,15 +47,15 @@ class Messenger:
     '''
     def send_step(self, step):        self.send_packet(self.get_datagram(step))
 
-    def send_packet(packet):
+    def send_packet(self, packet):
         # TODO: For reliability, save to-send packets in a hash
         self.socket.sendto(packet, self.connection_info)
 
     def get_step(self):
         # This mirrors the sending code closely
-        return self.parse_datagram(self.socket.rcvfrom(MAX_PACKET_BYTES)[0])
+        return self.parse_datagram(self.socket.recvfrom(MAX_PACKET_BYTES)[0])
     
-    def get_datagram(step):
+    def get_datagram(self, step):
         stream = io.BytesIO()
         # First message: Unique ID of the step (as a string because
         # it will be a very large number. Might need to use bignum.
@@ -160,6 +163,7 @@ class Messenger:
             return None
 
 class Server:
+    CLIENT_IPS = ['127.0.0.1']
     def __init__(self, settings, port, listen=5, host=None,
             client_count=1, ent_manager=None, ):
         self.socket = get_socket()
@@ -175,14 +179,12 @@ class Server:
         # self.socket.listen(self.listen)
         
         # Create connection objects as connections appear
-        while len(self.client_cons) < self.client_count:
-            clientsock, address = self.socket.accept()
-            print(address)
-            con_id = len(self.client_cons)
-            client_con = Messenger(clientsock)
-            self.client_cons[con_id] = client_con
-            print('Connected: ' + str(address) + ' id: ' + str(con_id))
-        print("All " + str(self.client_count) + " clients connected. Sending Handshakes")  
+        for id, ip in CLIENT_IPS.items():
+            sock = get_socket()
+            client_con = Messenger(sock)
+            self.client_cons[id] = client_con
+            print(f'Connected, ip: {ip}, id: {id}')
+        print(f"All {len(CLIENT_IPS)} clients connected. Sending Handshakes")  
         
         # Fun hack: always set up the players on opposing sides
         
