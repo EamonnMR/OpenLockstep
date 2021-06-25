@@ -1,6 +1,6 @@
 # OpenLockstep: Networked RTS engine in python
 
-The basic idea for this project is the twin concepts of an entity/component game arcatecture and a lockstep network model (as described in the classic paper [1500 Archers on a 28.8](https://www.gamasutra.com/view/feature/131503/1500_archers_on_a_288_network_.php). It's data driven and attempts to mess with the data as little as possible so that it's obvious how you get from YAML to game entities. The goal, beyond playing with those concepts (and maybe ending up with a playable PVP RTS) is to leave a foundation that anyone can pick up and use to experiment with RTS concepts - it's a type of game I very much enjoy, and one that I'd like to see continued innovation in.
+The basic ideas for this project are the twin concepts of an entity/component game architecture and a lockstep network model (as described in the classic paper [1500 Archers on a 28.8](https://www.gamasutra.com/view/feature/131503/1500_archers_on_a_288_network_.php). It's data driven and attempts to mess with the data as little as possible so that it's obvious how you get from YAML to game entities. The goal, beyond playing with those concepts (and maybe ending up with a playable PVP RTS) is to leave a foundation that anyone can pick up and use to experiment with RTS concepts - it's a type of game I very much enjoy, and one that I'd like to see continued innovation in.
 
 
 ## Installation:
